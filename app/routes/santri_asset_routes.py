@@ -25,11 +25,12 @@ def get_service(db: Session = Depends(get_db)) -> SantriAssetService:
 
 @router.get("", response_model=None)
 async def get_all_assets(
-    santri_id: UUID = Query(..., description="Santri ID"),
+    santri_id: Optional[UUID] = Query(None, description="Santri ID"),
     page: int = Query(1, ge=1, description="Page number"),
     per_page: int = Query(20, ge=1, le=100, description="Items per page"),
     search: Optional[str] = Query(None, description="Search by jenis_aset"),
     jenis_aset: Optional[str] = Query(None, description="Filter by jenis_aset"),
+    pesantren_id: Optional[UUID] = Query(None, description="Filter by pondok pesantren ID"),
     service: SantriAssetService = Depends(get_service)
 ):
     """Get all assets for a santri with pagination and filters."""
@@ -39,7 +40,8 @@ async def get_all_assets(
             page=page,
             per_page=per_page,
             search=search,
-            jenis_aset=jenis_aset
+            jenis_aset=jenis_aset,
+            pesantren_id=pesantren_id
         )
         
         result = []

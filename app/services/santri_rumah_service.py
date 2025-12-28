@@ -3,6 +3,7 @@
 from uuid import UUID
 from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
+from app.models.santri_pribadi import SantriPribadi
 from sqlalchemy import update
 
 from app.models.santri_rumah import SantriRumah
@@ -19,13 +20,19 @@ class SantriRumahService:
         self,
         page: int = 1,
         per_page: int = 20,
-        santri_id: Optional[UUID] = None
+        santri_id: Optional[UUID] = None,
+        pesantren_id: Optional[UUID] = None,
     ) -> Tuple[List[SantriRumah], int]:
         """Get all rumah records with pagination and optional filtering."""
         query = self.db.query(SantriRumah)
 
         if santri_id:
             query = query.filter(SantriRumah.santri_id == santri_id)
+
+        if pesantren_id:
+            query = query.join(
+                SantriPribadi, SantriPribadi.id == SantriRumah.santri_id
+            ).filter(SantriPribadi.pesantren_id == pesantren_id)
 
         total = query.count()
         offset = (page - 1) * per_page

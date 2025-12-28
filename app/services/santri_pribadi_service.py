@@ -30,7 +30,8 @@ class SantriPribadiService:
         search: Optional[str] = None,
         provinsi: Optional[str] = None,
         kabupaten: Optional[str] = None,
-        jenis_kelamin: Optional[str] = None
+        jenis_kelamin: Optional[str] = None,
+        pesantren_id: Optional[UUID] = None,
     ) -> Tuple[List[SantriPribadi], int]:
         """
         Get all santri with pagination and filters.
@@ -57,6 +58,9 @@ class SantriPribadiService:
         
         if jenis_kelamin:
             query = query.filter(SantriPribadi.jenis_kelamin == jenis_kelamin)
+
+        if pesantren_id:
+            query = query.filter(SantriPribadi.pesantren_id == pesantren_id)
         
         # Get total count
         total = query.count()

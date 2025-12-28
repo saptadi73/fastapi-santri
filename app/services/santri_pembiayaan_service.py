@@ -22,7 +22,8 @@ class SantriPembiayaanService:
         per_page: int = 20,
         santri_id: Optional[UUID] = None,
         sumber_biaya: Optional[str] = None,
-        status_pembayaran: Optional[str] = None
+        status_pembayaran: Optional[str] = None,
+        pesantren_id: Optional[UUID] = None,
     ) -> Tuple[List[SantriPembiayaan], int]:
         """
         Get all pembiayaan records with pagination and filters.
@@ -43,6 +44,12 @@ class SantriPembiayaanService:
         # Filter by status_pembayaran if provided
         if status_pembayaran:
             query = query.filter(SantriPembiayaan.status_pembayaran == status_pembayaran)
+
+        # Filter by pesantren_id via join to SantriPribadi
+        if pesantren_id:
+            query = query.join(
+                SantriPribadi, SantriPribadi.id == SantriPembiayaan.santri_id
+            ).filter(SantriPribadi.pesantren_id == pesantren_id)
         
         # Get total count
         total = query.count()

@@ -25,11 +25,12 @@ def get_service(db: Session = Depends(get_db)) -> SantriOrangtuaService:
 
 @router.get("", response_model=None)
 async def get_all_orangtua(
-    santri_id: UUID = Query(..., description="Santri ID"),
+    santri_id: Optional[UUID] = Query(None, description="Santri ID"),
     page: int = Query(1, ge=1, description="Page number"),
     per_page: int = Query(20, ge=1, le=100, description="Items per page"),
     search: Optional[str] = Query(None, description="Search by nama or NIK"),
     hubungan: Optional[str] = Query(None, description="Filter by hubungan (ayah/ibu/wali)"),
+    pesantren_id: Optional[UUID] = Query(None, description="Filter by pondok pesantren ID"),
     service: SantriOrangtuaService = Depends(get_service)
 ):
     """Get all orangtua for a santri with pagination and filters."""
@@ -39,7 +40,8 @@ async def get_all_orangtua(
             page=page,
             per_page=per_page,
             search=search,
-            hubungan=hubungan
+            hubungan=hubungan,
+            pesantren_id=pesantren_id
         )
         
         result = []

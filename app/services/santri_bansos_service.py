@@ -21,7 +21,8 @@ class SantriBansosService:
         self,
         page: int = 1,
         per_page: int = 20,
-        santri_id: Optional[UUID] = None
+        santri_id: Optional[UUID] = None,
+        pesantren_id: Optional[UUID] = None,
     ) -> Tuple[List[SantriBansos], int]:
         """
         Get all bansos records with pagination and filters.
@@ -34,6 +35,12 @@ class SantriBansosService:
         # Filter by santri_id if provided
         if santri_id:
             query = query.filter(SantriBansos.santri_id == santri_id)
+
+        # Filter by pesantren_id via join to SantriPribadi
+        if pesantren_id:
+            query = query.join(
+                SantriPribadi, SantriPribadi.id == SantriBansos.santri_id
+            ).filter(SantriPribadi.pesantren_id == pesantren_id)
         
         # Get total count
         total = query.count()

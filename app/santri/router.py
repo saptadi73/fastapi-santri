@@ -32,6 +32,7 @@ async def get_all_santri(
     provinsi: Optional[str] = Query(None, description="Filter by provinsi"),
     kabupaten: Optional[str] = Query(None, description="Filter by kabupaten"),
     jenis_kelamin: Optional[str] = Query(None, description="Filter by jenis kelamin (L/P)"),
+    pesantren_id: Optional[UUID] = Query(None, description="Filter by pondok pesantren ID"),
     service: SantriPribadiService = Depends(get_service)
 ):
     """Get all santri with pagination and filters."""
@@ -41,7 +42,8 @@ async def get_all_santri(
         search=search,
         provinsi=provinsi,
         kabupaten=kabupaten,
-        jenis_kelamin=jenis_kelamin
+        jenis_kelamin=jenis_kelamin,
+        pesantren_id=pesantren_id
     )
     
     # Add foto count to each santri
@@ -54,7 +56,9 @@ async def get_all_santri(
             "jenis_kelamin": santri.jenis_kelamin,
             "provinsi": santri.provinsi,
             "kabupaten": santri.kabupaten,
-            "foto_count": len(santri.foto_santri)
+            "foto_count": len(santri.foto_santri),
+            "pesantren_id": getattr(santri, "pesantren_id", None),
+            "pesantren_nama": santri.pesantren.nama if getattr(santri, "pesantren", None) else None,
         }
         result.append(santri_dict)
     
@@ -88,6 +92,7 @@ async def get_santri_detail(
 
 @router.post("", response_model=None)
 async def create_santri(
+    pesantren_id: UUID = Form(...),
     nama: str = Form(...),
     jenis_kelamin: str = Form(...),
     nik: Optional[str] = Form(None),
@@ -127,6 +132,7 @@ async def create_santri(
         
         # Create schema object
         santri_data = SantriPribadiCreate(
+            pesantren_id=pesantren_id,
             nama=nama,
             jenis_kelamin=jenis_kelamin,
             nik=nik,
@@ -165,6 +171,7 @@ async def create_santri(
 @router.put("/{santri_id}", response_model=None)
 async def update_santri(
     santri_id: UUID,
+    pesantren_id: Optional[UUID] = Form(None),
     nama: Optional[str] = Form(None),
     jenis_kelamin: Optional[str] = Form(None),
     nik: Optional[str] = Form(None),
@@ -197,6 +204,7 @@ async def update_santri(
         
         # Create update schema
         update_data = SantriPribadiUpdate(
+            pesantren_id=pesantren_id,
             nama=nama,
             jenis_kelamin=jenis_kelamin,
             nik=nik,

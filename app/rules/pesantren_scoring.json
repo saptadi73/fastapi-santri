@@ -1,0 +1,244 @@
+{
+  "scoring_type": "pondok_pesantren",
+  "version": "1.1",
+  "dimensions": [
+    {
+      "key": "kelayakan_fisik",
+      "weight": 0.40,
+      "parameters": [
+        {
+          "key": "kondisi_bangunan",
+          "enum": "KondisiBangunanEnum",
+          "mapping": {
+            "permanen": 100,
+            "semi_permanen": 70,
+            "non_permanen": 40
+          }
+        },
+        {
+          "key": "status_bangunan",
+          "enum": "StatusBangunanEnum",
+          "mapping": {
+            "milik_sendiri": 100,
+            "wakaf": 95,
+            "hibah": 85,
+            "pinjam": 65,
+            "sewa": 60
+          }
+        },
+        {
+          "key": "keamanan_bangunan",
+          "enum": "KeamananBangunanEnum",
+          "mapping": {
+            "tinggi": 100,
+            "standar": 80,
+            "minim": 60,
+            "tidak_aman": 30
+          }
+        },
+        {
+          "key": "jenis_lantai",
+          "enum": "JenisLantaiEnum",
+          "mapping": {
+            "marmer": 100,
+            "keramik": 90,
+            "beton": 70,
+            "kayu": 65,
+            "tanah": 30
+          }
+        },
+        {
+          "key": "jenis_dinding",
+          "enum": "JenisDindingEnum",
+          "mapping": {
+            "tembok": 100,
+            "papan": 70,
+            "kayu": 65,
+            "bambu": 50,
+            "anyaman": 40
+          }
+        },
+        {
+          "key": "jenis_atap",
+          "enum": "JenisAtapEnum",
+          "mapping": {
+            "genteng_tanah_liat": 100,
+            "metal": 90,
+            "upvc": 85,
+            "seng": 60,
+            "asbes": 50,
+            "ijuk": 40
+          }
+        }
+      ]
+    },
+    {
+      "key": "air_sanitasi",
+      "weight": 0.25,
+      "parameters": [
+        {
+          "key": "air_bersih",
+          "enum": "AirBersihEnum",
+          "mapping": {
+            "lancar": 100,
+            "terbatas": 60,
+            "tidak_tersedia": 20
+          }
+        },
+        {
+          "key": "sumber_air",
+          "enum": "SumberAirEnum",
+          "mapping": {
+            "PDAM": 100,
+            "sumur": 80,
+            "berbagai_macam": 75,
+            "hujan": 50,
+            "sungai": 30
+          }
+        },
+        {
+          "key": "kualitas_air",
+          "enum": "KualitasAirBersihEnum",
+          "mapping": {
+            "layak_minum": 100,
+            "keruh": 60,
+            "berbau": 40,
+            "asin": 30
+          }
+        },
+        {
+          "key": "sanitasi",
+          "enum": "SanitasiEnum",
+          "mapping": {
+            "layak": 100,
+            "cukup": 70,
+            "tidak_layak": 30
+          }
+        },
+        {
+          "key": "fasilitas_mck",
+          "enum": "FasilitasMCKEnum",
+          "mapping": {
+            "lengkap": 100,
+            "cukup": 75,
+            "kurang_lengkap": 50,
+            "tidak_layak": 25
+          }
+        }
+      ]
+    },
+    {
+      "key": "fasilitas_pendukung",
+      "weight": 0.20,
+      "parameters": [
+        {
+          "key": "sumber_listrik",
+          "enum": "SumberListrikEnum",
+          "mapping": {
+            "PLN": 100,
+            "tenaga_surya": 85,
+            "genset": 60,
+            "listrik_tidak_ada": 20
+          }
+        },
+        {
+          "key": "kestabilan_listrik",
+          "enum": "KestabilanEnum",
+          "mapping": {
+            "stabil": 100,
+            "tidak_stabil": 60,
+            "tidak_ada": 20
+          }
+        },
+        {
+          "key": "fasilitas_mengajar",
+          "enum": "FasilitasMengajarEnum",
+          "mapping": {
+            "projector": 100,
+            "tv_monitor": 85,
+            "whiteboard": 80,
+            "papan_tulis": 70
+          }
+        },
+        {
+          "key": "fasilitas_komunikasi",
+          "enum": "FasilitasKomunikasiEnum",
+          "mapping": {
+            "internet": 100,
+            "telepon": 70,
+            "pos": 50
+          }
+        },
+        {
+          "key": "fasilitas_transportasi",
+          "enum": "FasilitasTransportasiEnum",
+          "mapping": {
+            "bus": 100,
+            "angkutan_umum": 80,
+            "ojek": 60,
+            "kendaraan_pribadi": 70
+          }
+        },
+        {
+          "key": "akses_jalan",
+          "enum": "AksesJalanEnum",
+          "mapping": {
+            "aspal": 100,
+            "cor_block": 85,
+            "kerikil": 60,
+            "tanah": 40
+          }
+        }
+      ]
+    },
+    {
+      "key": "mutu_pendidikan",
+      "weight": 0.15,
+      "parameters": [
+        {
+          "key": "kurikulum",
+          "enum": "KurikulumEnum",
+          "mapping": {
+            "terstandar": 100,
+            "internal": 75,
+            "tidak_jelas": 40
+          }
+        },
+        {
+          "key": "akreditasi",
+          "enum": "AkreditasiEnum",
+          "mapping": {
+            "A": 100,
+            "B": 80,
+            "C": 60,
+            "belum": 40
+          }
+        },
+        {
+          "key": "prestasi_santri",
+          "enum": "PrestasiEnum",
+          "mapping": {
+            "nasional": 100,
+            "regional": 75,
+            "tidak_ada": 40
+          }
+        },
+        {
+          "key": "metode_pembayaran",
+          "enum": "MetodePembayaranEnum",
+          "mapping": {
+            "non_tunai": 100,
+            "campuran": 75,
+            "tunai": 60
+          }
+        }
+      ]
+    }
+  ],
+  "result_mapping": [
+    { "min": 85, "category": "sangat_layak" },
+    { "min": 70, "category": "layak" },
+    { "min": 55, "category": "cukup_layak" },
+    { "min": 0, "category": "tidak_layak" }
+  ]
+}

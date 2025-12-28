@@ -12,6 +12,11 @@ from app.routes.santri_bansos_routes import router as santri_bansos_router
 from app.routes.santri_kesehatan_routes import router as santri_kesehatan_router
 from app.routes.santri_pembiayaan_routes import router as santri_pembiayaan_router
 from app.routes.score_routes import router as score_router
+from app.routes.pondok_pesantren_routes import router as pondok_pesantren_router
+from app.routes.pesantren_fisik_routes import router as pesantren_fisik_router
+from app.routes.pesantren_fasilitas_routes import router as pesantren_fasilitas_router
+from app.routes.pesantren_pendidikan_routes import router as pesantren_pendidikan_router
+from app.routes.pesantren_score_routes import router as pesantren_score_router
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -37,6 +42,11 @@ app.include_router(santri_bansos_router)
 app.include_router(santri_kesehatan_router)
 app.include_router(santri_pembiayaan_router)
 app.include_router(score_router)
+app.include_router(pondok_pesantren_router)
+app.include_router(pesantren_fisik_router)
+app.include_router(pesantren_fasilitas_router)
+app.include_router(pesantren_pendidikan_router)
+app.include_router(pesantren_score_router)
 
 @app.get("/")
 def root():

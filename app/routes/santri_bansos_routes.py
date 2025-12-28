@@ -27,13 +27,15 @@ async def get_all_bansos(
     page: int = Query(1, ge=1, description="Page number"),
     per_page: int = Query(20, ge=1, le=100, description="Items per page"),
     santri_id: Optional[UUID] = Query(None, description="Filter by santri ID"),
+    pesantren_id: Optional[UUID] = Query(None, description="Filter by pondok pesantren ID"),
     service: SantriBansosService = Depends(get_service)
 ):
     """Get all bansos records with pagination and filters."""
     bansos_list, total = service.get_all(
         page=page,
         per_page=per_page,
-        santri_id=santri_id
+        santri_id=santri_id,
+        pesantren_id=pesantren_id
     )
     
     return paginated_response(

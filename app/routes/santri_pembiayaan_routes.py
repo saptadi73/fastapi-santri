@@ -29,6 +29,7 @@ async def get_all_pembiayaan(
     santri_id: Optional[UUID] = Query(None, description="Filter by santri ID"),
     sumber_biaya: Optional[str] = Query(None, description="Filter by sumber biaya"),
     status_pembayaran: Optional[str] = Query(None, description="Filter by status pembayaran"),
+    pesantren_id: Optional[UUID] = Query(None, description="Filter by pondok pesantren ID"),
     service: SantriPembiayaanService = Depends(get_service)
 ):
     """Get all pembiayaan records with pagination and filters."""
@@ -37,7 +38,8 @@ async def get_all_pembiayaan(
         per_page=per_page,
         santri_id=santri_id,
         sumber_biaya=sumber_biaya,
-        status_pembayaran=status_pembayaran
+        status_pembayaran=status_pembayaran,
+        pesantren_id=pesantren_id
     )
     
     return paginated_response(

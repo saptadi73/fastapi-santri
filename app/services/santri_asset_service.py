@@ -8,6 +8,7 @@ from fastapi import UploadFile, HTTPException
 
 from app.models.santri_asset import SantriAsset
 from app.models.foto_asset import FotoAsset
+from app.models.santri_pribadi import SantriPribadi
 from app.schemas.santri_asset_schema import SantriAssetCreate, SantriAssetUpdate
 from app.supports import FileHandler
 
@@ -25,16 +26,23 @@ class SantriAssetService:
     
     def get_all(
         self,
-        santri_id: UUID,
+        santri_id: Optional[UUID] = None,
         page: int = 1,
         per_page: int = 20,
         search: Optional[str] = None,
         jenis_aset: Optional[str] = None,
+        pesantren_id: Optional[UUID] = None,
     ) -> Tuple[List[SantriAsset], int]:
-        """Get all assets for a santri with pagination and filters."""
-        query = self.db.query(SantriAsset).filter(
-            SantriAsset.santri_id == santri_id
-        )
+        """Get all assets with pagination and filters."""
+        query = self.db.query(SantriAsset)
+
+        if santri_id:
+            query = query.filter(SantriAsset.santri_id == santri_id)
+
+        if pesantren_id:
+            query = query.join(
+                SantriPribadi, SantriPribadi.id == SantriAsset.santri_id
+            ).filter(SantriPribadi.pesantren_id == pesantren_id)
         
         if search:
             query = query.filter(

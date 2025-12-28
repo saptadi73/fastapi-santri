@@ -21,7 +21,8 @@ class SantriKesehatanService:
         page: int = 1,
         per_page: int = 20,
         santri_id: Optional[UUID] = None,
-        status_gizi: Optional[str] = None
+        status_gizi: Optional[str] = None,
+        pesantren_id: Optional[UUID] = None,
     ) -> Tuple[List[SantriKesehatan], int]:
         """
         Get all kesehatan records with pagination and filters.
@@ -38,6 +39,12 @@ class SantriKesehatanService:
         # Filter by status_gizi if provided
         if status_gizi:
             query = query.filter(SantriKesehatan.status_gizi == status_gizi)
+
+        # Filter by pesantren_id via join to SantriPribadi
+        if pesantren_id:
+            query = query.join(
+                SantriPribadi, SantriPribadi.id == SantriKesehatan.santri_id
+            ).filter(SantriPribadi.pesantren_id == pesantren_id)
         
         # Get total count
         total = query.count()

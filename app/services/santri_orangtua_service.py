@@ -3,6 +3,7 @@
 from typing import List, Optional, Tuple
 from uuid import UUID
 from sqlalchemy.orm import Session
+from app.models.santri_pribadi import SantriPribadi
 from sqlalchemy import func, or_
 from fastapi import UploadFile, HTTPException
 
@@ -25,16 +26,23 @@ class SantriOrangtuaService:
     
     def get_all(
         self,
-        santri_id: UUID,
+        santri_id: Optional[UUID] = None,
         page: int = 1,
         per_page: int = 20,
         search: Optional[str] = None,
         hubungan: Optional[str] = None,
+        pesantren_id: Optional[UUID] = None,
     ) -> Tuple[List[SantriOrangtua], int]:
-        """Get all orangtua for a santri with pagination and filters."""
-        query = self.db.query(SantriOrangtua).filter(
-            SantriOrangtua.santri_id == santri_id
-        )
+        """Get all orangtua with pagination and filters."""
+        query = self.db.query(SantriOrangtua)
+
+        if santri_id:
+            query = query.filter(SantriOrangtua.santri_id == santri_id)
+
+        if pesantren_id:
+            query = query.join(
+                SantriPribadi, SantriPribadi.id == SantriOrangtua.santri_id
+            ).filter(SantriPribadi.pesantren_id == pesantren_id)
         
         if search:
             query = query.filter(

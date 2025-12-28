@@ -28,6 +28,7 @@ async def get_all_kesehatan(
     per_page: int = Query(20, ge=1, le=100, description="Items per page"),
     santri_id: Optional[UUID] = Query(None, description="Filter by santri ID"),
     status_gizi: Optional[str] = Query(None, description="Filter by status gizi (baik/kurang/lebih)"),
+    pesantren_id: Optional[UUID] = Query(None, description="Filter by pondok pesantren ID"),
     service: SantriKesehatanService = Depends(get_service)
 ):
     """Get all kesehatan records with pagination and filters."""
@@ -35,7 +36,8 @@ async def get_all_kesehatan(
         page=page,
         per_page=per_page,
         santri_id=santri_id,
-        status_gizi=status_gizi
+        status_gizi=status_gizi,
+        pesantren_id=pesantren_id
     )
     
     return paginated_response(

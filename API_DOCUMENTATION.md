@@ -16,7 +16,12 @@
 9. [Santri Kesehatan (Health)](#santri-kesehatan-health)
 10. [Santri Pembiayaan (Financing)](#santri-pembiayaan-financing)
 11. [Scoring System](#scoring-system)
-12. [Response Format](#response-format)
+12. [Pondok Pesantren (Main Data)](#pondok-pesantren-main-data)
+13. [Pesantren Fisik (Physical Infrastructure)](#pesantren-fisik-physical-infrastructure)
+14. [Pesantren Fasilitas (Facilities)](#pesantren-fasilitas-facilities)
+15. [Pesantren Pendidikan (Education)](#pesantren-pendidikan-education)
+16. [Pesantren Scoring System](#pesantren-scoring-system)
+17. [Response Format](#response-format)
 
 ---
 
@@ -173,6 +178,7 @@ GET /api/santri-pribadi?page=1&per_page=20&search=Ahmad&provinsi=Jawa Barat&kabu
 - `provinsi` (optional): Filter by province
 - `kabupaten` (optional): Filter by district
 - `jenis_kelamin` (optional): Filter by gender (L/P)
+- `pesantren_id` (optional): Filter by pesantren UUID
 
 **Response (200 OK):**
 ```json
@@ -187,6 +193,8 @@ GET /api/santri-pribadi?page=1&per_page=20&search=Ahmad&provinsi=Jawa Barat&kabu
       "jenis_kelamin": "L",
       "provinsi": "Jawa Barat",
       "kabupaten": "Bandung",
+      "pesantren_id": "660e8400-e29b-41d4-a716-446655440099",
+      "pesantren_nama": "Pondok Pesantren Al-Ikhlas",
       "foto_count": 2
     }
   ],
@@ -224,6 +232,11 @@ GET /api/santri-pribadi/{santri_id}
     "jenis_kelamin": "L",
     "status_tinggal": "mondok",
     "lama_mondok_tahun": 2,
+    "pesantren_id": "660e8400-e29b-41d4-a716-446655440099",
+    "pondok": {
+      "id": "660e8400-e29b-41d4-a716-446655440099",
+      "nama": "Pondok Pesantren Al-Ikhlas"
+    },
     "provinsi": "Jawa Barat",
     "kabupaten": "Bandung",
     "kecamatan": "Bandung Kota",
@@ -249,8 +262,9 @@ Content-Type: multipart/form-data
 
 **Form Fields:**
 ```
-nama: "Ahmad Hidayat"
-jenis_kelamin: "L"
+nama: "Ahmad Hidayat" (required)
+jenis_kelamin: "L" (required)
+pesantren_id: "660e8400-e29b-41d4-a716-446655440099" (optional - UUID pesantren)
 nik: "3271091234567890"
 no_kk: "3271091234567800"
 tempat_lahir: "Bandung"
@@ -290,6 +304,7 @@ Content-Type: multipart/form-data
 **Form Fields:** (all optional)
 ```
 nama: "Ahmad Hidayat Baru"
+pesantren_id: "660e8400-e29b-41d4-a716-446655440099" (change pesantren)
 provinsi: "Jawa Timur"
 kabupaten: "Surabaya"
 ...
@@ -414,7 +429,8 @@ GET /api/santri-orangtua?santri_id={uuid}&page=1&per_page=20&hubungan=ayah
 ```
 
 **Query Parameters:**
-- `santri_id` (required, UUID): Santri ID
+- `santri_id` (optional, UUID): Filter by santri ID
+- `pesantren_id` (optional, UUID): Filter by pesantren ID
 - `page` (default: 1): Page number
 - `per_page` (default: 20, max: 100): Items per page
 - `search` (optional): Search by nama or NIK
@@ -675,6 +691,7 @@ GET /api/santri-rumah?page=1&per_page=20&santri_id={uuid}
 - `page` (default: 1): Page number
 - `per_page` (default: 20, max: 100): Items per page
 - `santri_id` (optional): Filter by santri ID
+- `pesantren_id` (optional, UUID): Filter by pesantren ID
 
 **Response (200 OK):**
 ```json
@@ -887,6 +904,7 @@ GET /api/santri-asset?page=1&per_page=20&santri_id={uuid}
 - `page` (default: 1)
 - `per_page` (default: 20, max: 100)
 - `santri_id` (optional): Filter by santri
+- `pesantren_id` (optional, UUID): Filter by pesantren
 
 **Response (200 OK):**
 ```json
@@ -1098,8 +1116,14 @@ DELETE /api/santri-asset/photos/{foto_id}
 
 ### List All Bansos
 ```
-GET /api/santri-bansos?page=1&per_page=20&santri_id={uuid}
+GET /api/santri-bansos?page=1&per_page=20&santri_id={uuid}&pesantren_id={uuid}
 ```
+
+**Query Parameters:**
+- `page` (default: 1)
+- `per_page` (default: 20, max: 100)
+- `santri_id` (optional): Filter by santri
+- `pesantren_id` (optional, UUID): Filter by pesantren
 
 **Response (200 OK):**
 ```json
@@ -1227,8 +1251,14 @@ DELETE /api/santri-bansos/{bansos_id}
 
 ### List All Health Records
 ```
-GET /api/santri-kesehatan?page=1&per_page=20&santri_id={uuid}
+GET /api/santri-kesehatan?page=1&per_page=20&santri_id={uuid}&pesantren_id={uuid}
 ```
+
+**Query Parameters:**
+- `page` (default: 1)
+- `per_page` (default: 20, max: 100)
+- `santri_id` (optional): Filter by santri
+- `pesantren_id` (optional, UUID): Filter by pesantren
 
 **Response (200 OK):**
 ```json
@@ -1333,8 +1363,14 @@ DELETE /api/santri-kesehatan/{kesehatan_id}
 
 ### List All Financing Records
 ```
-GET /api/santri-pembiayaan?page=1&per_page=20&santri_id={uuid}
+GET /api/santri-pembiayaan?page=1&per_page=20&santri_id={uuid}&pesantren_id={uuid}
 ```
+
+**Query Parameters:**
+- `page` (default: 1)
+- `per_page` (default: 20, max: 100)
+- `santri_id` (optional): Filter by santri
+- `pesantren_id` (optional, UUID): Filter by pesantren
 
 **Response (200 OK):**
 ```json
@@ -1580,6 +1616,423 @@ Based on `scoring.json` configuration:
 
 ---
 
+## Pondok Pesantren (Main Data)
+
+### List Pondok Pesantren
+Get paginated list of pesantren with filters.
+
+```
+GET /pondok-pesantren?page=1&per_page=20&search=&provinsi=&kabupaten=
+```
+
+**Query Parameters:**
+- `page` (int, default: 1) - Page number
+- `per_page` (int, default: 20) - Items per page
+- `search` (string, optional) - Search by nama or nsp
+- `provinsi` (string, optional) - Filter by province
+- `kabupaten` (string, optional) - Filter by regency
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "nama": "Pondok Pesantren Al-Ikhlas",
+      "nsp": "12345678",
+      "alamat": "Jl. Raya No. 123",
+      "kabupaten": "Tasikmalaya",
+      "provinsi": "Jawa Barat",
+      "nama_kyai": "KH. Ahmad",
+      "jumlah_santri": 500,
+      "jumlah_guru": 25,
+      "tahun_berdiri": 1985
+    }
+  ],
+  "total": 50,
+  "page": 1,
+  "per_page": 20
+}
+```
+
+### Get Pesantren Detail
+```
+GET /pondok-pesantren/{pesantren_id}
+```
+
+**Response (200 OK):**
+```json
+{
+  "id": "uuid",
+  "nama": "Pondok Pesantren Al-Ikhlas",
+  "nsp": "12345678",
+  "alamat": "Jl. Raya No. 123",
+  "desa": "Cikunir",
+  "kecamatan": "Singaparna",
+  "kabupaten": "Tasikmalaya",
+  "provinsi": "Jawa Barat",
+  "kode_pos": "46415",
+  "lokasi": {
+    "type": "Point",
+    "coordinates": [108.123, -7.456]
+  },
+  "telepon": "081234567890",
+  "email": "info@pesantren.com",
+  "website": "www.pesantren.com",
+  "nama_kyai": "KH. Ahmad",
+  "jumlah_santri": 500,
+  "jumlah_guru": 25,
+  "tahun_berdiri": 1985,
+  "created_at": "2025-01-01T00:00:00",
+  "updated_at": "2025-01-01T00:00:00"
+}
+```
+
+### Create Pesantren
+```
+POST /pondok-pesantren
+```
+
+**Request Body:**
+```json
+{
+  "nama": "Pondok Pesantren Al-Ikhlas",
+  "nsp": "12345678",
+  "alamat": "Jl. Raya No. 123",
+  "desa": "Cikunir",
+  "kecamatan": "Singaparna",
+  "kabupaten": "Tasikmalaya",
+  "provinsi": "Jawa Barat",
+  "kode_pos": "46415",
+  "longitude": 108.123,
+  "latitude": -7.456,
+  "telepon": "081234567890",
+  "email": "info@pesantren.com",
+  "website": "www.pesantren.com",
+  "nama_kyai": "KH. Ahmad",
+  "jumlah_santri": 500,
+  "jumlah_guru": 25,
+  "tahun_berdiri": 1985
+}
+```
+
+**Response (201 Created):** Same as detail response
+
+### Update Pesantren
+```
+PUT /pondok-pesantren/{pesantren_id}
+```
+
+**Request Body:** Same as create (all fields optional)
+
+**Response (200 OK):** Same as detail response
+
+### Delete Pesantren
+```
+DELETE /pondok-pesantren/{pesantren_id}
+```
+
+**Response (204 No Content)**
+
+---
+
+## Pesantren Fisik (Physical Infrastructure)
+
+### Get Fisik by Pesantren ID
+```
+GET /pesantren-fisik/pesantren/{pesantren_id}
+```
+
+**Response (200 OK):**
+```json
+{
+  "id": "uuid",
+  "pesantren_id": "uuid",
+  "luas_tanah": 5000.0,
+  "luas_bangunan": 3000.0,
+  "status_bangunan": "milik_sendiri",
+  "kondisi_bangunan": "permanen",
+  "sumber_air": "PDAM",
+  "kualitas_air_bersih": "layak_minum",
+  "fasilitas_mck": "lengkap",
+  "jumlah_mck": 20,
+  "jenis_lantai": "keramik",
+  "jenis_dinding": "tembok",
+  "jenis_atap": "genteng_tanah_liat",
+  "sumber_listrik": "PLN",
+  "daya_listrik_va": "5500",
+  "kestabilan_listrik": "stabil",
+  "sistem_keamanan": "ada"
+}
+```
+
+### Get Fisik by ID
+```
+GET /pesantren-fisik/{fisik_id}
+```
+
+**Response (200 OK):** Same as above
+
+### Create Fisik Data
+```
+POST /pesantren-fisik
+```
+
+**Request Body:**
+```json
+{
+  "pesantren_id": "uuid",
+  "luas_tanah": 5000.0,
+  "luas_bangunan": 3000.0,
+  "status_bangunan": "milik_sendiri",
+  "kondisi_bangunan": "permanen",
+  "sumber_air": "PDAM",
+  "kualitas_air_bersih": "layak_minum",
+  "fasilitas_mck": "lengkap",
+  "jumlah_mck": 20,
+  "jenis_lantai": "keramik",
+  "jenis_dinding": "tembok",
+  "jenis_atap": "genteng_tanah_liat",
+  "sumber_listrik": "PLN",
+  "daya_listrik_va": "5500",
+  "kestabilan_listrik": "stabil",
+  "sistem_keamanan": "ada"
+}
+```
+
+**Response (201 Created):** Same as detail response
+
+**Note:** Only one fisik record per pesantren is allowed.
+
+### Update Fisik Data
+```
+PUT /pesantren-fisik/{fisik_id}
+```
+
+**Request Body:** Same as create (all fields optional)
+
+**Response (200 OK):** Same as detail response
+
+### Delete Fisik Data
+```
+DELETE /pesantren-fisik/{fisik_id}
+```
+
+**Response (204 No Content)**
+
+---
+
+## Pesantren Fasilitas (Facilities)
+
+### Get Fasilitas by Pesantren ID
+```
+GET /pesantren-fasilitas/pesantren/{pesantren_id}
+```
+
+**Response (200 OK):**
+```json
+{
+  "id": "uuid",
+  "pesantren_id": "uuid",
+  "jumlah_kamar": 50,
+  "jumlah_ruang_kelas": 20,
+  "jumlah_masjid": 1,
+  "perpustakaan": true,
+  "laboratorium": true,
+  "ruang_komputer": true,
+  "fasilitas_olahraga": "lapangan_futsal,basket",
+  "fasilitas_kesehatan": "klinik",
+  "koperasi": true,
+  "kantin": true,
+  "fasilitas_mengajar": "projector,whiteboard",
+  "fasilitas_komunikasi": "internet,telepon",
+  "akses_transportasi": "angkutan_umum",
+  "akses_jalan": "aspal",
+  "jarak_ke_kota_km": 5.5
+}
+```
+
+### Get Fasilitas by ID
+```
+GET /pesantren-fasilitas/{fasilitas_id}
+```
+
+**Response (200 OK):** Same as above
+
+### Create Fasilitas Data
+```
+POST /pesantren-fasilitas
+```
+
+**Request Body:** Same as response above (all fields optional except pesantren_id)
+
+**Response (201 Created):** Same as detail response
+
+**Note:** Only one fasilitas record per pesantren is allowed.
+
+### Update Fasilitas Data
+```
+PUT /pesantren-fasilitas/{fasilitas_id}
+```
+
+**Request Body:** Same as create (all fields optional)
+
+**Response (200 OK):** Same as detail response
+
+### Delete Fasilitas Data
+```
+DELETE /pesantren-fasilitas/{fasilitas_id}
+```
+
+**Response (204 No Content)**
+
+---
+
+## Pesantren Pendidikan (Education)
+
+### Get Pendidikan by Pesantren ID
+```
+GET /pesantren-pendidikan/pesantren/{pesantren_id}
+```
+
+**Response (200 OK):**
+```json
+{
+  "id": "uuid",
+  "pesantren_id": "uuid",
+  "jenjang_pendidikan": "SD,SMP,SMA",
+  "kurikulum": "terstandar",
+  "akreditasi": "A",
+  "jumlah_guru_tetap": 20,
+  "jumlah_guru_tidak_tetap": 5,
+  "guru_s1_keatas": 18,
+  "prestasi_akademik": "nasional",
+  "prestasi_non_akademik": "regional",
+  "program_unggulan": "Tahfidz,Bahasa Arab",
+  "metode_pembayaran": "tunai,non_tunai",
+  "biaya_bulanan_min": 200000,
+  "biaya_bulanan_max": 500000
+}
+```
+
+### Get Pendidikan by ID
+```
+GET /pesantren-pendidikan/{pendidikan_id}
+```
+
+**Response (200 OK):** Same as above
+
+### Create Pendidikan Data
+```
+POST /pesantren-pendidikan
+```
+
+**Request Body:** Same as response above (all fields optional except pesantren_id)
+
+**Response (201 Created):** Same as detail response
+
+**Note:** Only one pendidikan record per pesantren is allowed.
+
+### Update Pendidikan Data
+```
+PUT /pesantren-pendidikan/{pendidikan_id}
+```
+
+**Request Body:** Same as create (all fields optional)
+
+**Response (200 OK):** Same as detail response
+
+### Delete Pendidikan Data
+```
+DELETE /pesantren-pendidikan/{pendidikan_id}
+```
+
+**Response (204 No Content)**
+
+---
+
+## Pesantren Scoring System
+
+### Calculate Pesantren Score
+Calculate and save quality score for a pesantren.
+
+```
+POST /api/pesantren-scoring/{pesantren_id}/calculate
+```
+
+**Response (200 OK):**
+```json
+{
+  "id": "uuid",
+  "pesantren_id": "uuid",
+  "skor_kelayakan_fisik": 85,
+  "skor_air_sanitasi": 90,
+  "skor_fasilitas_pendukung": 75,
+  "skor_mutu_pendidikan": 80,
+  "skor_total": 83,
+  "kategori_kelayakan": "sangat_layak",
+  "metode": "weighted_average",
+  "version": "1.0",
+  "calculated_at": "2025-12-28T10:30:00"
+}
+```
+
+**Scoring Dimensions:**
+- **Kelayakan Fisik (40%)**: Status bangunan, kondisi, luas
+- **Air & Sanitasi (25%)**: Sumber air, kualitas, MCK
+- **Fasilitas Pendukung (20%)**: Ruang kelas, perpustakaan, olahraga
+- **Mutu Pendidikan (15%)**: Akreditasi, guru, prestasi
+
+**Kategori Kelayakan:**
+- `sangat_layak`: Skor 80-100 (Excellent condition)
+- `layak`: Skor 60-79 (Good condition)
+- `cukup_layak`: Skor 40-59 (Fair condition)
+- `tidak_layak`: Skor 0-39 (Poor condition)
+
+### Get Score by Pesantren ID
+```
+GET /api/pesantren-scoring/pesantren/{pesantren_id}
+```
+
+**Response (200 OK):** Same as calculate response
+
+### Get Score by Score ID
+```
+GET /api/pesantren-scoring/{skor_id}
+```
+
+**Response (200 OK):** Same as calculate response
+
+### Batch Calculate All Scores
+Calculate scores for all pesantren in the system.
+
+```
+POST /api/pesantren-scoring/batch/calculate-all
+```
+
+**Response (200 OK):**
+```json
+{
+  "total_processed": 50,
+  "total_success": 48,
+  "total_failed": 2,
+  "results": [
+    {
+      "pesantren_id": "uuid",
+      "status": "success",
+      "skor_total": 83
+    },
+    {
+      "pesantren_id": "uuid",
+      "status": "failed",
+      "error": "Missing required data"
+    }
+  ]
+}
+```
+
+---
+
 ## Response Format
 
 ### Success Response
@@ -1650,6 +2103,28 @@ Based on `scoring.json` configuration:
    - `status_pembayaran`: "lancar", "terlambat", "menunggak"
    - `status_gizi`: "baik", "kurang", "lebih"
    - `status_rumah`: "milik_sendiri", "kontrak", "menumpang"
+   
+8. **Pesantren Enum Values**:
+   - `status_bangunan`: "milik_sendiri", "sewa", "pinjam", "hibah", "wakaf"
+   - `kondisi_bangunan`: "permanen", "semi_permanen", "non_permanen"
+   - `sumber_air`: "sumur", "PDAM", "sungai", "hujan", "berbagai_macam"
+   - `kualitas_air_bersih`: "asin", "layak_minum", "berbau", "keruh"
+   - `fasilitas_mck`: "lengkap", "kurang_lengkap", "cukup", "tidak_layak"
+   - `kestabilan_listrik`: "stabil", "tidak_stabil", "tidak_ada"
+   - `jenis_lantai`: "keramik", "marmer", "kayu", "beton", "tanah"
+   - `jenis_atap`: "genteng_tanah_liat", "metal", "seng", "upvc", "asbes", "ijuk"
+   - `jenis_dinding`: "tembok", "kayu", "bambu", "anyaman", "papan"
+   - `sumber_listrik`: "PLN", "genset", "listrik_tidak_ada", "tenaga_surya"
+   - `kurikulum`: "terstandar", "internal", "tidak_jelas"
+   - `akreditasi`: "A", "B", "C", "belum"
+   - `prestasi_akademik/non_akademik`: "nasional", "regional", "tidak_ada"
+   - `metode_pembayaran`: "tunai", "non_tunai", "campuran"
+   - `akses_jalan`: "aspal", "cor_block", "tanah", "kerikil"
+
+9. **Pesantren Relationships**:
+   - All santri now have `pesantren_id` linking to their pesantren
+   - Filter santri by pesantren: Add `?pesantren_id={uuid}` to any santri list endpoint
+   - Each pesantren can have one fisik, fasilitas, and pendidikan record
 
 ---
 

@@ -4,6 +4,12 @@ from typing import Optional, List
 from datetime import date
 from pydantic import BaseModel, Field, field_validator
 from uuid import UUID
+class PondokSummary(BaseModel):
+    id: UUID
+    nama: str
+
+    class Config:
+        from_attributes = True
 
 
 class FotoSantriBase(BaseModel):
@@ -23,6 +29,7 @@ class FotoSantriResponse(FotoSantriBase):
 
 class SantriPribadiBase(BaseModel):
     """Base schema for santri pribadi."""
+    pesantren_id: UUID = Field(..., description="ID pondok pesantren tempat santri terdaftar")
     nama: str = Field(..., min_length=1, max_length=150, description="Nama lengkap santri")
     nik: Optional[str] = Field(None, max_length=16, description="Nomor Induk Kependudukan")
     no_kk: Optional[str] = Field(None, max_length=16, description="Nomor Kartu Keluarga")
@@ -60,6 +67,7 @@ class SantriPribadiCreate(SantriPribadiBase):
 
 class SantriPribadiUpdate(BaseModel):
     """Schema for updating santri pribadi."""
+    pesantren_id: Optional[UUID] = Field(None, description="ID pondok pesantren")
     nama: Optional[str] = Field(None, min_length=1, max_length=150)
     nik: Optional[str] = Field(None, max_length=16)
     no_kk: Optional[str] = Field(None, max_length=16)
@@ -94,6 +102,7 @@ class SantriPribadiResponse(SantriPribadiBase):
     """Response schema for santri pribadi."""
     id: UUID
     foto_santri: List[FotoSantriResponse] = []
+    pesantren: Optional[PondokSummary] = None
     
     class Config:
         from_attributes = True
@@ -108,6 +117,8 @@ class SantriPribadiListResponse(BaseModel):
     provinsi: Optional[str]
     kabupaten: Optional[str]
     foto_count: int = 0
+    pesantren_id: Optional[UUID] = None
+    pesantren_nama: Optional[str] = None
     
     class Config:
         from_attributes = True
