@@ -2,6 +2,7 @@
 
 from typing import Any, Optional, Dict, List
 from fastapi.responses import JSONResponse as FastAPIJSONResponse
+from fastapi.encoders import jsonable_encoder
 
 
 class JSONResponse:
@@ -36,7 +37,7 @@ class JSONResponse:
             response["meta"] = meta
             
         return FastAPIJSONResponse(
-            content=response,
+            content=jsonable_encoder(response),
             status_code=status_code
         )
 
@@ -72,7 +73,7 @@ class JSONResponse:
             response["error_code"] = error_code
             
         return FastAPIJSONResponse(
-            content=response,
+            content=jsonable_encoder(response),
             status_code=status_code
         )
 
@@ -118,7 +119,7 @@ class JSONResponse:
         }
         
         return FastAPIJSONResponse(
-            content=response,
+            content=jsonable_encoder(response),
             status_code=status_code
         )
 

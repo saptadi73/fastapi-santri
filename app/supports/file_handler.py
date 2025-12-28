@@ -153,7 +153,8 @@ class FileHandler:
         finally:
             await file.close()
         
-        return str(file_path), filename
+        # Return POSIX-style path to ensure forward slashes for URLs
+        return file_path.as_posix(), filename
 
     def delete_file(self, file_path: str) -> bool:
         """

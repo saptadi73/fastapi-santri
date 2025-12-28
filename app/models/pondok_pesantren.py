@@ -22,8 +22,14 @@ class PondokPesantren(UUIDBase):
     kecamatan: Mapped[str | None]
     kabupaten: Mapped[str | None]
     provinsi: Mapped[str | None]
+    kode_pos: Mapped[str | None] = mapped_column(String(10))
+    telepon: Mapped[str | None] = mapped_column(String(50))
+    email: Mapped[str | None] = mapped_column(String(100))
+    website: Mapped[str | None] = mapped_column(String(255))
+    nama_kyai: Mapped[str | None] = mapped_column(String(200))
 
     lokasi = mapped_column(Geometry("POINT", srid=4326))
+    foto_path: Mapped[str | None] = mapped_column(String(500))  # Main photo path
 
     created_at: Mapped[str] = mapped_column(TIMESTAMP, server_default=func.now())
     updated_at: Mapped[str] = mapped_column(
@@ -36,5 +42,8 @@ class PondokPesantren(UUIDBase):
     santri = relationship("SantriPribadi", back_populates="pesantren")
     santri_gis = relationship("Santri", back_populates="pesantren")
     skor = relationship("PesantrenSkor", back_populates="pesantren", uselist=False)
-
-    foto_pesantren = relationship("FotoPesantren", back_populates="pesantren", cascade="all, delete-orphan")
+    foto_pesantren = relationship(
+        "FotoPesantren",
+        back_populates="pesantren",
+        cascade="all, delete-orphan",
+    )

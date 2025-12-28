@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD022 MD023 MD031 MD032 MD040 MD007 MD060 MD036 MD009 MD005 -->
+
 # API Documentation - FastAPI Santri
 
 **Base URL:** `http://localhost:8000`
@@ -5,6 +7,7 @@
 ---
 
 ## Table of Contents
+
 1. [Authentication](#authentication)
 2. [Photo Management](#photo-management-overview)
 3. [GIS / Map Endpoints](#gis--map-endpoints)
@@ -28,8 +31,9 @@
 ## Photo Management Overview
 
 Photo management is available for three main entities:
+
 - **Santri Pribadi** (foto_santri) - Student photos
-- **Santri Orangtua** (foto_orangtua) - Parent/Guardian photos  
+- **Santri Orangtua** (foto_orangtua) - Parent/Guardian photos
 - **Santri Asset** (foto_asset) - Asset/Property photos
 
 ### General Photo Endpoints Pattern
@@ -37,37 +41,55 @@ Photo management is available for three main entities:
 For each entity, three photo operations are available:
 
 **Add Photos:**
-```
+
+```text
 POST /api/{entity}/{entity_id}/photos
 ```
 
 **Update Photo:**
-```
+
+```text
 PUT /api/{entity}/photos/{foto_id}
 ```
 
 **Delete Photo:**
-```
+
+```text
 DELETE /api/{entity}/photos/{foto_id}
 ```
 
 Where `{entity}` is one of: `santri-pribadi`, `santri-orangtua`, `santri-asset`
 
 ### File Upload Requirements
+
 - **Supported Formats:** jpg, jpeg, png, webp
 - **Max Size per File:** 5MB
 - **Multiple Files:** Yes, allowed in add/create operations
 
 ### Photo Response Format
+
 All photo endpoints return consistent structure:
+
 ```json
 {
   "id": "UUID",
-  "santri_id": "UUID" | "orangtua_id": "UUID" | "asset_id": "UUID",
+  "santri_id": "UUID" | "orangtua_id" | "asset_id",
   "nama_file": "filename.jpg",
   "url_photo": "/uploads/entity/filename.jpg"
 }
 ```
+
+### Photo Objects (Standardized)
+
+- Fields: `id`, `nama_file`, `url_photo`, plus parent reference (`santri_id` | `orangtua_id` | `asset_id` | `pesantren_id` as applicable).
+- `url_photo` always uses forward slashes (`/`) and is a relative path to be prefixed by your API base (e.g., `${API_BASE_URL}/uploads/...`).
+
+### Static Uploads
+
+- All uploaded files are served under `/uploads`.
+- Example: `url_photo: /uploads/santri/{santri_id}/filename.jpg`.
+- Clients should prefix with the API base URL, e.g. `${API_BASE_URL}/uploads/...`.
+- All paths are URL-style (`/`), regardless of the server OS.
 
 **Note:** When updating or deleting, old file is automatically unlinked from disk.
 
@@ -233,7 +255,7 @@ GET /api/santri-pribadi/{santri_id}
     "status_tinggal": "mondok",
     "lama_mondok_tahun": 2,
     "pesantren_id": "660e8400-e29b-41d4-a716-446655440099",
-    "pondok": {
+    "pesantren": {
       "id": "660e8400-e29b-41d4-a716-446655440099",
       "nama": "Pondok Pesantren Al-Ikhlas"
     },
@@ -241,11 +263,13 @@ GET /api/santri-pribadi/{santri_id}
     "kabupaten": "Bandung",
     "kecamatan": "Bandung Kota",
     "desa": "Desa Maju",
+    "latitude": -6.92,
+    "longitude": 107.61,
     "foto_santri": [
       {
         "id": "660e8400-e29b-41d4-a716-446655440001",
         "nama_file": "ahmad_1.jpg",
-        "url": "/uploads/santri/ahmad_1.jpg"
+        "url_photo": "/uploads/santri/ahmad_1.jpg"
       }
     ]
   }
@@ -335,6 +359,20 @@ DELETE /api/santri-pribadi/{santri_id}
     "id": "550e8400-e29b-41d4-a716-446655440000"
   }
 }
+```
+
+### Alias Paths (without `/api`)
+All Santri Pribadi endpoints are also available without the `/api` prefix using `/santri-pribadi`. The request and response formats are identical.
+
+Examples:
+```
+GET    /santri-pribadi
+GET    /santri-pribadi/{santri_id}
+POST   /santri-pribadi
+PUT    /santri-pribadi/{santri_id}
+DELETE /santri-pribadi/{santri_id}
+POST   /santri-pribadi/{santri_id}/photos
+DELETE /santri-pribadi/photos/{foto_id}
 ```
 
 ### Add Photos to Santri
@@ -1672,10 +1710,8 @@ GET /pondok-pesantren/{pesantren_id}
   "kabupaten": "Tasikmalaya",
   "provinsi": "Jawa Barat",
   "kode_pos": "46415",
-  "lokasi": {
-    "type": "Point",
-    "coordinates": [108.123, -7.456]
-  },
+  "latitude": -7.456,
+  "longitude": 108.123,
   "telepon": "081234567890",
   "email": "info@pesantren.com",
   "website": "www.pesantren.com",
@@ -1683,10 +1719,52 @@ GET /pondok-pesantren/{pesantren_id}
   "jumlah_santri": 500,
   "jumlah_guru": 25,
   "tahun_berdiri": 1985,
+  "foto_path": "/uploads/pesantren/{id}/main.jpg",
+  "foto_pesantren": [
+    {
+      "id": "uuid",
+      "nama_file": "gallery1.jpg",
+      "url_photo": "/uploads/pesantren/{id}/gallery1.jpg"
+    }
+  ],
   "created_at": "2025-01-01T00:00:00",
   "updated_at": "2025-01-01T00:00:00"
 }
 ```
+
+### Dropdown List (for UI selects)
+Get all pesantren as a simple list for dropdowns.
+
+```
+GET /pondok-pesantren/dropdown
+```
+
+**Response (200 OK):**
+```json
+[
+  { "id": "uuid", "nama": "Pondok Pesantren Al-Ikhlas" },
+  { "id": "uuid", "nama": "Pondok Pesantren Mahasina" }
+]
+```
+
+**Optional Search:**
+Filter by name, NSP, kabupaten, or provinsi (case-insensitive substring):
+
+```
+GET /pondok-pesantren/dropdown?search=mahasina
+```
+
+**Filtered Response:**
+```json
+[
+  { "id": "uuid", "nama": "Pondok Pesantren Mahasina" }
+]
+```
+
+### Photos
+- `foto_path`: main photo path for a pesantren.
+- `foto_pesantren`: array of gallery photos.
+- Images are accessible via `/uploads/...`.
 
 ### Create Pesantren
 ```
@@ -2070,6 +2148,10 @@ POST /api/pesantren-scoring/batch/calculate-all
 ```
 
 ### Common Status Codes
+### Serialization Notes
+- All responses use a standardized wrapper (`success`, `message`, `data`).
+- Data is serialized using FastAPI's `jsonable_encoder` to ensure Pydantic models, `UUID`, and `datetime` values are JSON-safe.
+- Nested relations (e.g., `pesantren`, `foto_santri`, `foto_pesantren`) are included where relevant.
 - `200 OK` - Success
 - `201 Created` - Resource created successfully
 - `400 Bad Request` - Invalid request data
@@ -2122,6 +2204,10 @@ POST /api/pesantren-scoring/batch/calculate-all
    - `akses_jalan`: "aspal", "cor_block", "tanah", "kerikil"
 
 9. **Pesantren Relationships**:
+  - **Coordinates Extraction**: Both Santri detail and Pesantren detail expose `latitude` and `longitude` derived from geometry (POINT).
+  - **Photos**: Santri and Pesantren return photo arrays; Pesantren also includes `foto_path` as the main photo.
+  - **Static Uploads**: Serve images directly from `/uploads/...`; construct absolute URLs with the API base.
+  - **GPS Recommendation**: When `status_tinggal = "mondok"`, clients should attempt to provide `latitude` and `longitude`. Backend accepts null, but coordinates improve map and GIS features.
    - All santri now have `pesantren_id` linking to their pesantren
    - Filter santri by pesantren: Add `?pesantren_id={uuid}` to any santri list endpoint
    - Each pesantren can have one fisik, fasilitas, and pendidikan record

@@ -6,6 +6,15 @@ from pydantic import BaseModel, Field
 from uuid import UUID
 
 
+class FotoPesantrenResponse(BaseModel):
+    """Response schema for foto pesantren."""
+    nama_file: str
+    url_photo: str
+
+    class Config:
+        from_attributes = True
+
+
 class PondokPesantrenBase(BaseModel):
     """Base schema for pondok pesantren."""
     nama: str = Field(..., min_length=1, max_length=200, description="Nama pondok pesantren")
@@ -18,8 +27,14 @@ class PondokPesantrenBase(BaseModel):
     kecamatan: Optional[str] = None
     kabupaten: Optional[str] = None
     provinsi: Optional[str] = None
+    kode_pos: Optional[str] = Field(None, max_length=10)
+    telepon: Optional[str] = Field(None, max_length=50)
+    email: Optional[str] = Field(None, max_length=100)
+    website: Optional[str] = Field(None, max_length=255)
+    nama_kyai: Optional[str] = Field(None, max_length=200)
     latitude: Optional[float] = Field(None, ge=-90, le=90)
     longitude: Optional[float] = Field(None, ge=-180, le=180)
+    foto_path: Optional[str] = Field(None, max_length=500, description="Path to main photo")
 
 
 class PondokPesantrenCreate(PondokPesantrenBase):
@@ -39,13 +54,22 @@ class PondokPesantrenUpdate(BaseModel):
     kecamatan: Optional[str] = None
     kabupaten: Optional[str] = None
     provinsi: Optional[str] = None
+    kode_pos: Optional[str] = Field(None, max_length=10)
+    telepon: Optional[str] = Field(None, max_length=50)
+    email: Optional[str] = Field(None, max_length=100)
+    website: Optional[str] = Field(None, max_length=255)
+    nama_kyai: Optional[str] = Field(None, max_length=200)
     latitude: Optional[float] = Field(None, ge=-90, le=90)
     longitude: Optional[float] = Field(None, ge=-180, le=180)
+    foto_path: Optional[str] = Field(None, max_length=500)
 
 
 class PondokPesantrenResponse(PondokPesantrenBase):
     """Response schema for pondok pesantren."""
     id: UUID
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    foto_pesantren: list["FotoPesantrenResponse"] = []
     
     class Config:
         from_attributes = True
@@ -60,6 +84,32 @@ class PondokPesantrenListResponse(BaseModel):
     provinsi: Optional[str]
     jumlah_santri: Optional[int]
     jumlah_guru: Optional[int]
+    nama_kyai: Optional[str]
+    tahun_berdiri: Optional[int]
     
     class Config:
         from_attributes = True
+
+
+class PondokPesantrenDropdownResponse(BaseModel):
+    """Response schema for pondok pesantren dropdown."""
+    id: UUID
+    nama: str
+    nsp: Optional[str]
+    kabupaten: Optional[str]
+    provinsi: Optional[str]
+    
+    class Config:
+        from_attributes = True
+
+
+class PaginatedPesantrenResponse(BaseModel):
+    """Response schema for paginated pondok pesantren list."""
+    data: list[PondokPesantrenListResponse]
+    total: int
+    page: int
+    per_page: int
+
+
+# Resolve forward references for Pydantic v2
+PondokPesantrenResponse.model_rebuild()

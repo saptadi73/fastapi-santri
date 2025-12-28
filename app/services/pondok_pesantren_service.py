@@ -7,6 +7,9 @@ from sqlalchemy import or_
 from fastapi import HTTPException
 
 from app.models.pondok_pesantren import PondokPesantren
+from app.models.foto_pesantren import FotoPesantren
+import os
+
 from app.schemas.pondok_pesantren_schema import PondokPesantrenCreate, PondokPesantrenUpdate
 
 
@@ -51,11 +54,41 @@ class PondokPesantrenService:
         
         return pesantren_list, total
     
+    def get_all_for_dropdown(self, search: Optional[str] = None) -> List[PondokPesantren]:
+        """Get all pondok pesantren for dropdown list (optional search)."""
+        query = self.db.query(PondokPesantren).order_by(PondokPesantren.nama)
+        if search:
+            like = f"%{search}%"
+            query = query.filter(
+                or_(
+                    PondokPesantren.nama.ilike(like),
+                    PondokPesantren.nsp.ilike(like),
+                    PondokPesantren.kabupaten.ilike(like),
+                    PondokPesantren.provinsi.ilike(like),
+                )
+            )
+        return query.all()
+    
     def get_by_id(self, pesantren_id: UUID) -> Optional[PondokPesantren]:
         """Get pondok pesantren by ID."""
-        return self.db.query(PondokPesantren).filter(
+        from sqlalchemy.orm import joinedload
+        
+        pesantren = self.db.query(PondokPesantren).options(
+            joinedload(PondokPesantren.foto_pesantren)
+        ).filter(
             PondokPesantren.id == pesantren_id
         ).first()
+        
+        # Extract lat/long from geometry if available
+        if pesantren and pesantren.lokasi:
+            from geoalchemy2.shape import to_shape
+            from shapely.geometry import Point
+            point = to_shape(pesantren.lokasi)
+            if isinstance(point, Point):
+                pesantren.latitude = point.y
+                pesantren.longitude = point.x
+        
+        return pesantren
     
     def create(self, data: PondokPesantrenCreate) -> PondokPesantren:
         """Create new pondok pesantren."""
@@ -71,6 +104,21 @@ class PondokPesantrenService:
         self.db.commit()
         self.db.refresh(pesantren)
         return pesantren
+
+    def add_photos(self, pesantren_id: UUID, paths: list[str]) -> None:
+        """Attach additional photos to a pesantren."""
+        if not paths:
+            return
+        objects = [
+            FotoPesantren(
+                pesantren_id=pesantren_id,
+                    nama_file=os.path.basename(path),
+                url_photo=path,
+            )
+            for path in paths
+        ]
+        self.db.add_all(objects)
+        self.db.commit()
     
     def update(
         self,

@@ -72,10 +72,33 @@ class SantriPribadiService:
         return santri_list, total
     
     def get_by_id(self, santri_id: UUID) -> Optional[SantriPribadi]:
-        """Get santri by ID with photos."""
-        return self.db.query(SantriPribadi).filter(
+        """Get santri by ID with photos and extract lat/long from geometry."""
+        from sqlalchemy.orm import joinedload
+
+        santri = self.db.query(SantriPribadi).options(
+            joinedload(SantriPribadi.foto_santri),
+            joinedload(SantriPribadi.pesantren),
+        ).filter(
             SantriPribadi.id == santri_id
         ).first()
+
+        # Extract latitude/longitude from geometry if available
+        if santri and getattr(santri, "lokasi", None):
+            try:
+                from typing import cast
+                from geoalchemy2.elements import WKBElement, WKTElement
+                from geoalchemy2.shape import to_shape
+                from shapely.geometry import Point
+                geom = cast(WKBElement | WKTElement, santri.lokasi)
+                point = to_shape(geom)
+                if isinstance(point, Point):
+                    santri.latitude = point.y
+                    santri.longitude = point.x
+            except Exception:
+                # If geometry conversion fails, leave lat/long as None
+                pass
+
+        return santri
     
     async def create(
         self,
