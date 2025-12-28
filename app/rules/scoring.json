@@ -1,0 +1,191 @@
+{
+  "metadata": {
+    "metode": "pesantren_kemiskinan_v1",
+    "version": "1.0.0",
+    "description": "Scoring kemiskinan santri berbasis rule dan bobot",
+    "skor_maks_total": 100
+  },
+
+  "kategori_kemiskinan": [
+    { "min": 80, "label": "Sangat Miskin" },
+    { "min": 65, "label": "Miskin" },
+    { "min": 45, "label": "Rentan" },
+    { "min": 0,  "label": "Tidak Miskin" }
+  ],
+
+  "dimensi": {
+    "ekonomi": {
+      "bobot": 0.30,
+      "skor_maks": 40,
+      "parameters": [
+        {
+          "kode": "penghasilan_bulanan",
+          "sumber": "santri_orangtua",
+          "rules": [
+            { "operator": "<",  "value": 500000,  "skor": 30 },
+            { "operator": "<",  "value": 1000000, "skor": 25 },
+            { "operator": "<",  "value": 2000000, "skor": 15 },
+            { "operator": ">=", "value": 2000000, "skor": 5 }
+          ]
+        },
+        {
+          "kode": "jumlah_tanggungan",
+          "sumber": "santri_orangtua",
+          "rules": [
+            { "operator": ">=", "value": 5, "skor": 5 },
+            { "operator": ">=", "value": 3, "skor": 3 },
+            { "operator": "<=", "value": 2, "skor": 1 }
+          ]
+        },
+        {
+          "kode": "status_pekerjaan",
+          "sumber": "santri_orangtua",
+          "rules": [
+            { "operator": "==", "value": "tidak_tetap", "skor": 5 },
+            { "operator": "==", "value": "buruh",       "skor": 4 },
+            { "operator": "==", "value": "tetap",       "skor": 1 }
+          ]
+        }
+      ]
+    },
+
+    "rumah": {
+      "bobot": 0.25,
+      "skor_maks": 43,
+      "parameters": [
+        {
+          "kode": "status_kepemilikan",
+          "sumber": "santri_rumah",
+          "rules": [
+            { "operator": "in", "value": ["menumpang", "kontrak"], "skor": 10 },
+            { "operator": "==", "value": "milik_sendiri",         "skor": 2 }
+          ]
+        },
+        {
+          "kode": "luas_per_orang",
+          "sumber": "santri_rumah",
+          "rules": [
+            { "operator": "<",  "value": 6, "skor": 10 },
+            { "operator": "<",  "value": 9, "skor": 5 },
+            { "operator": ">=", "value": 9, "skor": 2 }
+          ]
+        },
+        {
+          "kode": "lantai",
+          "sumber": "santri_rumah",
+          "rules": [
+            { "operator": "==", "value": "tanah",   "skor": 8 },
+            { "operator": "==", "value": "semen",   "skor": 4 },
+            { "operator": "==", "value": "keramik", "skor": 1 }
+          ]
+        },
+        {
+          "kode": "sanitasi",
+          "sumber": "santri_rumah",
+          "rules": [
+            { "operator": "==", "value": false, "skor": 8 },
+            { "operator": "==", "value": true,  "skor": 2 }
+          ]
+        }
+      ]
+    },
+
+    "aset": {
+      "bobot": 0.15,
+      "skor_maks": 23,
+      "parameters": [
+        {
+          "kode": "motor",
+          "sumber": "santri_aset",
+          "rules": [
+            { "operator": "==", "value": 0, "skor": 8 },
+            { "operator": "==", "value": 1, "skor": 4 }
+          ]
+        },
+        {
+          "kode": "mobil",
+          "sumber": "santri_aset",
+          "rules": [
+            { "operator": "==", "value": 0, "skor": 5 },
+            { "operator": ">=", "value": 1, "skor": 1 }
+          ]
+        },
+        {
+          "kode": "lahan",
+          "sumber": "santri_aset",
+          "rules": [
+            { "operator": "==", "value": 0,   "skor": 5 },
+            { "operator": "<",  "value": 0.5, "skor": 3 },
+            { "operator": ">=", "value": 0.5, "skor": 1 }
+          ]
+        }
+      ]
+    },
+
+    "pembiayaan": {
+      "bobot": 0.15,
+      "skor_maks": 25,
+      "parameters": [
+        {
+          "kode": "sumber_biaya",
+          "sumber": "santri_pembiayaan",
+          "rules": [
+            { "operator": "==", "value": "donatur",    "skor": 10 },
+            { "operator": "==", "value": "beasiswa",  "skor": 8 },
+            { "operator": "==", "value": "orang_tua", "skor": 3 }
+          ]
+        },
+        {
+          "kode": "tunggakan",
+          "sumber": "santri_pembiayaan",
+          "rules": [
+            { "operator": "==", "value": true,  "skor": 5 },
+            { "operator": "==", "value": false, "skor": 0 }
+          ]
+        }
+      ]
+    },
+
+    "kesehatan": {
+      "bobot": 0.10,
+      "skor_maks": 25,
+      "parameters": [
+        {
+          "kode": "penyakit_kronis",
+          "sumber": "santri_kesehatan",
+          "rules": [
+            { "operator": "==", "value": true, "skor": 8 }
+          ]
+        },
+        {
+          "kode": "bpjs_aktif",
+          "sumber": "santri_kesehatan",
+          "rules": [
+            { "operator": "==", "value": false, "skor": 5 }
+          ]
+        }
+      ]
+    },
+
+    "bansos": {
+      "bobot": 0.05,
+      "skor_maks": 17,
+      "parameters": [
+        {
+          "kode": "pernah_menerima",
+          "sumber": "santri_bansos",
+          "rules": [
+            { "operator": "==", "value": false, "skor": 8 }
+          ]
+        },
+        {
+          "kode": "dtks",
+          "sumber": "santri_bansos",
+          "rules": [
+            { "operator": "==", "value": false, "skor": 5 }
+          ]
+        }
+      ]
+    }
+  }
+}
