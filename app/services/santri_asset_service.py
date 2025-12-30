@@ -85,14 +85,14 @@ class SantriAssetService:
             # Upload photos if provided
             if foto_files:
                 for foto_file in foto_files:
-                    url_photo = await self.file_handler.save_file(
+                    file_path, filename = await self.file_handler.save_file(
                         foto_file, f"{asset.id}"
                     )
                     
                     foto = FotoAsset(
                         asset_id=asset.id,
-                        nama_file=foto_file.filename,
-                        url_photo=url_photo
+                        nama_file=filename,
+                        url_photo=file_path
                     )
                     self.db.add(foto)
             
@@ -107,9 +107,10 @@ class SantriAssetService:
     async def update(
         self,
         asset_id: UUID,
-        data: SantriAssetUpdate
+        data: SantriAssetUpdate,
+        foto_files: Optional[List[UploadFile]] = None
     ) -> Optional[SantriAsset]:
-        """Update asset by ID."""
+        """Update asset by ID with optional new photos."""
         asset = self.db.query(SantriAsset).filter(
             SantriAsset.id == asset_id
         ).first()
@@ -117,15 +118,32 @@ class SantriAssetService:
         if not asset:
             return None
         
-        # Update fields
-        update_data = data.model_dump(exclude_unset=True)
-        for field, value in update_data.items():
-            if value is not None:
-                setattr(asset, field, value)
-        
-        self.db.commit()
-        self.db.refresh(asset)
-        return asset
+        try:
+            # Update fields
+            update_data = data.model_dump(exclude_unset=True)
+            for field, value in update_data.items():
+                if value is not None:
+                    setattr(asset, field, value)
+            
+            # Upload new photos if provided
+            if foto_files:
+                for foto_file in foto_files:
+                    file_path, filename = await self.file_handler.save_file(
+                        foto_file, f"{asset_id}"
+                    )
+                    foto = FotoAsset(
+                        asset_id=asset_id,
+                        nama_file=filename,
+                        url_photo=file_path
+                    )
+                    self.db.add(foto)
+            
+            self.db.commit()
+            self.db.refresh(asset)
+            return asset
+        except Exception as e:
+            self.db.rollback()
+            raise HTTPException(status_code=500, detail=f"Failed to update asset: {str(e)}")
     
     async def delete(self, asset_id: UUID) -> bool:
         """Delete asset and related photos."""
@@ -166,14 +184,14 @@ class SantriAssetService:
         fotos = []
         try:
             for foto_file in foto_files:
-                url_photo = await self.file_handler.save_file(
+                file_path, filename = await self.file_handler.save_file(
                     foto_file, f"{asset_id}"
                 )
                 
                 foto = FotoAsset(
                     asset_id=asset_id,
-                    nama_file=foto_file.filename,
-                    url_photo=url_photo
+                    nama_file=filename,
+                    url_photo=file_path
                 )
                 self.db.add(foto)
                 fotos.append(foto)
@@ -228,15 +246,15 @@ class SantriAssetService:
             
             # Upload new file
             asset_id = foto.asset_id
-            url_photo = await self.file_handler.save_file(
+            file_path, filename = await self.file_handler.save_file(
                 new_foto_file, f"{asset_id}"
             )
             
             # Update database record using SQLAlchemy update
             from sqlalchemy import update
             stmt = update(FotoAsset).where(FotoAsset.id == foto_id).values(
-                nama_file=new_foto_file.filename,
-                url_photo=url_photo
+                nama_file=filename,
+                url_photo=file_path
             )
             self.db.execute(stmt)
             self.db.commit()

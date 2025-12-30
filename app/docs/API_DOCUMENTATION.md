@@ -6,47 +6,50 @@
 
 ---
 
-## Table of Contents
+### Create Asset
+Create a single asset with optional photos (multipart/form-data).
 
-1. [Authentication](#authentication)
-2. [Photo Management](#photo-management-overview)
-3. [GIS / Map Endpoints](#gis--map-endpoints)
-4. [Santri Pribadi (Core Data)](#santri-pribadi-core-data)
-5. [Santri Orangtua (Parents)](#santri-orangtua-parents)
-6. [Santri Rumah (House)](#santri-rumah-house)
-7. [Santri Asset (Aset)](#santri-asset-aset)
-8. [Santri Bansos (Bantuan Sosial)](#santri-bansos-bantuan-sosial)
-9. [Santri Kesehatan (Health)](#santri-kesehatan-health)
-10. [Santri Pembiayaan (Financing)](#santri-pembiayaan-financing)
-11. [Scoring System](#scoring-system)
-12. [Pondok Pesantren (Main Data)](#pondok-pesantren-main-data)
-13. [Pesantren Fisik (Physical Infrastructure)](#pesantren-fisik-physical-infrastructure)
-14. [Pesantren Fasilitas (Facilities)](#pesantren-fasilitas-facilities)
-15. [Pesantren Pendidikan (Education)](#pesantren-pendidikan-education)
-16. [Pesantren Scoring System](#pesantren-scoring-system)
-17. [Response Format](#response-format)
+```
+POST /api/santri-asset
+Content-Type: multipart/form-data
+```
 
----
-
-## Photo Management Overview
-
-Photo management is available for three main entities:
-
-- **Santri Pribadi** (foto_santri) - Student photos
-- **Santri Orangtua** (foto_orangtua) - Parent/Guardian photos
-- **Santri Asset** (foto_asset) - Asset/Property photos
-
-### General Photo Endpoints Pattern
-
-For each entity, three photo operations are available:
-
-**Add Photos:**
+**Form Fields:**
+```
 
 ```text
 POST /api/{entity}/{entity_id}/photos
 ```
 
 **Update Photo:**
+
+**Response (201 Created):**
+```json
+{
+  "success": true,
+  "message": "Success",
+  "data": {
+    "id": "770e8400-e29b-41d4-a716-446655440002",
+    "santri_id": "550e8400-e29b-41d4-a716-446655440000",
+    "jenis_aset": "motor",
+    "jumlah": 1,
+    "nilai_perkiraan": 15000000,
+    "foto_asset": [
+      {
+        "id": "990e8400-e29b-41d4-a716-446655440099",
+        "asset_id": "770e8400-e29b-41d4-a716-446655440002",
+        "nama_file": "motor_1.jpg",
+        "url_photo": "/uploads/asset/770e8400-e29b-41d4-a716-446655440002/motor_1.jpg"
+      }
+    ]
+  }
+}
+```
+
+Notes:
+- Valid `jenis_aset`: `motor`, `mobil`, `sepeda`, `hp`, `laptop`, `lahan`, `ternak`, `alat_kerja`, `lainnya`.
+- If your UI uses "handphone", map it to `hp` to avoid validation errors.
+- Photos uploaded here are appended; use the photo update endpoint to replace specific photos.
 
 ```text
 PUT /api/{entity}/photos/{foto_id}
@@ -58,7 +61,7 @@ PUT /api/{entity}/photos/{foto_id}
 DELETE /api/{entity}/photos/{foto_id}
 ```
 
-Where `{entity}` is one of: `santri-pribadi`, `santri-orangtua`, `santri-asset`
+Where `{entity}` is one of: `santri-pribadi`, `santri-orangtua`, `santri-asset`, `santri-rumah`
 
 ### File Upload Requirements
 
@@ -73,7 +76,7 @@ All photo endpoints return consistent structure:
 ```json
 {
   "id": "UUID",
-  "santri_id": "UUID" | "orangtua_id" | "asset_id",
+  "santri_id": "UUID" | "orangtua_id" | "asset_id" | "rumah_id",
   "nama_file": "filename.jpg",
   "url_photo": "/uploads/entity/filename.jpg"
 }
@@ -81,7 +84,7 @@ All photo endpoints return consistent structure:
 
 ### Photo Objects (Standardized)
 
-- Fields: `id`, `nama_file`, `url_photo`, plus parent reference (`santri_id` | `orangtua_id` | `asset_id` | `pesantren_id` as applicable).
+- Fields: `id`, `nama_file`, `url_photo`, plus parent reference (`santri_id` | `orangtua_id` | `asset_id` | `rumah_id` | `pesantren_id` as applicable).
 - `url_photo` always uses forward slashes (`/`) and is a relative path to be prefixed by your API base (e.g., `${API_BASE_URL}/uploads/...`).
 
 ### Static Uploads
@@ -486,7 +489,14 @@ GET /api/santri-orangtua?santri_id={uuid}&page=1&per_page=20&hubungan=ayah
       "hubungan": "ayah",
       "pekerjaan": "Petani",
       "status_hidup": "hidup",
-      "foto_count": 1
+      "foto_count": 1,
+      "foto_orangtua": [
+        {
+          "id": "770e8400-e29b-41d4-a716-446655440003",
+          "nama_file": "budi_1.jpg",
+          "url_photo": "/uploads/orangtua/660e8400-e29b-41d4-a716-446655440001/budi_1.jpg"
+        }
+      ]
     },
     {
       "id": "660e8400-e29b-41d4-a716-446655440002",
@@ -494,7 +504,14 @@ GET /api/santri-orangtua?santri_id={uuid}&page=1&per_page=20&hubungan=ayah
       "hubungan": "ibu",
       "pekerjaan": "Ibu Rumah Tangga",
       "status_hidup": "hidup",
-      "foto_count": 1
+      "foto_count": 1,
+      "foto_orangtua": [
+        {
+          "id": "880e8400-e29b-41d4-a716-446655440004",
+          "nama_file": "nur_1.jpg",
+          "url_photo": "/uploads/orangtua/660e8400-e29b-41d4-a716-446655440002/nur_1.jpg"
+        }
+      ]
     }
   ],
   "pagination": {
@@ -745,7 +762,15 @@ GET /api/santri-rumah?page=1&per_page=20&santri_id={uuid}
       "jenis_dinding": "tembok",
       "jenis_atap": "genteng",
       "akses_air_bersih": "layak",
-      "daya_listrik_va": "2200"
+      "daya_listrik_va": "2200",
+      "foto_rumah": [
+        {
+          "id": "990e8400-e29b-41d4-a716-446655440005",
+          "rumah_id": "880e8400-e29b-41d4-a716-446655440003",
+          "nama_file": "rumah_1.jpg",
+          "url_photo": "/uploads/rumah/rumah_1.jpg"
+        }
+      ]
     }
   ],
   "pagination": {
@@ -758,7 +783,7 @@ GET /api/santri-rumah?page=1&per_page=20&santri_id={uuid}
 ```
 
 ### Get Rumah Detail
-Retrieve full details of a house record.
+Retrieve full details of a house record with photos.
 
 ```
 GET /api/santri-rumah/{rumah_id}
@@ -780,13 +805,27 @@ GET /api/santri-rumah/{rumah_id}
     "jenis_dinding": "tembok",
     "jenis_atap": "genteng",
     "akses_air_bersih": "layak",
-    "daya_listrik_va": "2200"
+    "daya_listrik_va": "2200",
+    "foto_rumah": [
+      {
+        "id": "990e8400-e29b-41d4-a716-446655440005",
+        "rumah_id": "880e8400-e29b-41d4-a716-446655440003",
+        "nama_file": "rumah_1.jpg",
+        "url_photo": "/uploads/rumah/rumah_1.jpg"
+      },
+      {
+        "id": "990e8400-e29b-41d4-a716-446655440006",
+        "rumah_id": "880e8400-e29b-41d4-a716-446655440003",
+        "nama_file": "rumah_2.jpg",
+        "url_photo": "/uploads/rumah/rumah_2.jpg"
+      }
+    ]
   }
 }
 ```
 
 ### Get Rumah by Santri
-Retrieve house information for a specific santri.
+Retrieve house information for a specific santri with photos.
 
 ```
 GET /api/santri-rumah/santri/{santri_id}
@@ -808,30 +847,38 @@ GET /api/santri-rumah/santri/{santri_id}
     "jenis_dinding": "tembok",
     "jenis_atap": "genteng",
     "akses_air_bersih": "layak",
-    "daya_listrik_va": "2200"
+    "daya_listrik_va": "2200",
+    "foto_rumah": [
+      {
+        "id": "990e8400-e29b-41d4-a716-446655440005",
+        "rumah_id": "880e8400-e29b-41d4-a716-446655440003",
+        "nama_file": "rumah_1.jpg",
+        "url_photo": "/uploads/rumah/rumah_1.jpg"
+      }
+    ]
   }
 }
 ```
 
 ### Create New Rumah
-Create a new house record for a santri.
+Create a new house record for a santri with optional photos.
 
 ```
 POST /api/santri-rumah
-Content-Type: application/json
+Content-Type: multipart/form-data
 ```
 
-**Request Body:**
-```json
-{
-  "santri_id": "550e8400-e29b-41d4-a716-446655440000",
-  "status_rumah": "milik_sendiri",
-  "jenis_lantai": "keramik",
-  "jenis_dinding": "tembok",
-  "jenis_atap": "genteng",
-  "akses_air_bersih": "layak",
-  "daya_listrik_va": "2200"
-}
+**Form Fields:**
+```
+santri_id: "550e8400-e29b-41d4-a716-446655440000" (required)
+status_rumah: "milik_sendiri" (required)
+jenis_lantai: "keramik" (required)
+jenis_dinding: "tembok" (required)
+jenis_atap: "genteng" (required)
+akses_air_bersih: "layak" (required)
+daya_listrik_va: "2200" (optional)
+fotos: [file1.jpg, file2.jpg] (optional, max 5MB each)
+```
 ```
 
 **Status Rumah Options:**
@@ -880,26 +927,42 @@ Content-Type: application/json
     "jenis_dinding": "tembok",
     "jenis_atap": "genteng",
     "akses_air_bersih": "layak",
-    "daya_listrik_va": "2200"
+    "daya_listrik_va": "2200",
+    "foto_rumah": [
+      {
+        "id": "990e8400-e29b-41d4-a716-446655440005",
+        "rumah_id": "880e8400-e29b-41d4-a716-446655440003",
+        "nama_file": "rumah_1.jpg",
+        "url_photo": "/uploads/rumah/rumah_1.jpg"
+      },
+      {
+        "id": "990e8400-e29b-41d4-a716-446655440006",
+        "rumah_id": "880e8400-e29b-41d4-a716-446655440003",
+        "nama_file": "rumah_2.jpg",
+        "url_photo": "/uploads/rumah/rumah_2.jpg"
+      }
+    ]
   }
 }
 ```
 
 ### Update Rumah
-Update house data (partial update).
+Update house data with optional new photos (partial update).
 
 ```
 PUT /api/santri-rumah/{rumah_id}
-Content-Type: application/json
+Content-Type: multipart/form-data
 ```
 
-**Request Body:** (all optional)
-```json
-{
-  "status_rumah": "kontrak",
-  "jenis_lantai": "semen",
-  "daya_listrik_va": "1300"
-}
+**Form Fields:** (all optional)
+```
+status_rumah: "kontrak"
+jenis_lantai: "semen"
+jenis_dinding: "tembok"
+jenis_atap: "genteng"
+akses_air_bersih: "layak"
+daya_listrik_va: "1300"
+fotos: [file1.jpg, file2.jpg] (optional, max 5MB each)
 ```
 
 **Response (200 OK):**
@@ -907,12 +970,41 @@ Content-Type: application/json
 {
   "success": true,
   "message": "Data rumah berhasil diupdate",
-  "data": { ... }
+  "data": {
+    "id": "880e8400-e29b-41d4-a716-446655440003",
+    "santri_id": "550e8400-e29b-41d4-a716-446655440000",
+    "status_rumah": "kontrak",
+    "jenis_lantai": "semen",
+    "jenis_dinding": "tembok",
+    "jenis_atap": "genteng",
+    "akses_air_bersih": "layak",
+    "daya_listrik_va": "1300",
+    "foto_rumah": [
+      {
+        "id": "990e8400-e29b-41d4-a716-446655440005",
+        "rumah_id": "880e8400-e29b-41d4-a716-446655440003",
+        "nama_file": "rumah_1.jpg",
+        "url_photo": "/uploads/rumah/rumah_1.jpg"
+      },
+      {
+        "id": "990e8400-e29b-41d4-a716-446655440007",
+        "rumah_id": "880e8400-e29b-41d4-a716-446655440003",
+        "nama_file": "rumah_3.jpg",
+        "url_photo": "/uploads/rumah/rumah_3.jpg"
+      }
+    ]
+  }
 }
 ```
 
+**Notes:**
+- You can update data fields only (without fotos)
+- You can add new photos only (without changing data)
+- You can do both in a single request
+- New photos are added to existing ones (not replaced)
+
 ### Delete Rumah
-Delete a house record.
+Delete a house record and all related photos.
 
 ```
 DELETE /api/santri-rumah/{rumah_id}
@@ -925,6 +1017,86 @@ DELETE /api/santri-rumah/{rumah_id}
   "message": "Data rumah berhasil dihapus",
   "data": {
     "id": "880e8400-e29b-41d4-a716-446655440003"
+  }
+}
+```
+
+### Add Photos to Rumah
+Add multiple photos to an existing rumah.
+
+```
+POST /api/santri-rumah/{rumah_id}/photos
+Content-Type: multipart/form-data
+```
+
+**Form Fields:**
+```
+fotos: [file1.jpg, file2.jpg, ...]
+```
+
+**Response (201 Created):**
+```json
+{
+  "success": true,
+  "message": "Success",
+  "data": [
+    {
+      "id": "990e8400-e29b-41d4-a716-446655440005",
+      "rumah_id": "880e8400-e29b-41d4-a716-446655440003",
+      "nama_file": "rumah_1.jpg",
+      "url_photo": "/uploads/rumah/rumah_1.jpg"
+    },
+    {
+      "id": "990e8400-e29b-41d4-a716-446655440006",
+      "rumah_id": "880e8400-e29b-41d4-a716-446655440003",
+      "nama_file": "rumah_2.jpg",
+      "url_photo": "/uploads/rumah/rumah_2.jpg"
+    }
+  ]
+}
+```
+
+### Update Rumah Photo
+Replace a rumah photo with a new one.
+
+```
+PUT /api/santri-rumah/photos/{foto_id}
+Content-Type: multipart/form-data
+```
+
+**Form Fields:**
+```
+foto: file.jpg
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Photo updated successfully",
+  "data": {
+    "id": "990e8400-e29b-41d4-a716-446655440005",
+    "rumah_id": "880e8400-e29b-41d4-a716-446655440003",
+    "nama_file": "rumah_new.jpg",
+    "url_photo": "/uploads/rumah/rumah_new.jpg"
+  }
+}
+```
+
+### Delete Rumah Photo
+Delete a single rumah photo.
+
+```
+DELETE /api/santri-rumah/photos/{foto_id}
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Success",
+  "data": {
+    "message": "Photo deleted successfully"
   }
 }
 ```
@@ -948,17 +1120,26 @@ GET /api/santri-asset?page=1&per_page=20&santri_id={uuid}
 ```json
 {
   "success": true,
-  "message": "Data aset berhasil diambil",
+  "message": "Success",
   "data": [
     {
       "id": "770e8400-e29b-41d4-a716-446655440002",
-      "santri_id": "550e8400-e29b-41d4-a716-446655440000",
       "jenis_aset": "motor",
       "jumlah": 1,
-      "nilai_perkiraan": 15000000
+      "nilai_perkiraan": 15000000,
+      "foto_count": 0
     }
   ],
-  "pagination": { ... }
+  "meta": {
+    "pagination": {
+      "current_page": 1,
+      "per_page": 20,
+      "total_items": 1,
+      "total_pages": 1,
+      "has_next": false,
+      "has_prev": false
+    }
+  }
 }
 ```
 
@@ -971,37 +1152,33 @@ GET /api/santri-asset/{asset_id}
 ```json
 {
   "success": true,
-  "message": "Detail aset berhasil diambil",
+  "message": "Success",
   "data": {
     "id": "770e8400-e29b-41d4-a716-446655440002",
     "santri_id": "550e8400-e29b-41d4-a716-446655440000",
     "jenis_aset": "motor",
     "jumlah": 1,
-    "nilai_perkiraan": 15000000
+    "nilai_perkiraan": 15000000,
+    "foto_asset": [
+      {
+        "id": "880e8400-e29b-41d4-a716-446655440004",
+        "asset_id": "770e8400-e29b-41d4-a716-446655440002",
+        "nama_file": "motor_1.jpg",
+        "url_photo": "/uploads/asset/motor_1.jpg"
+      }
+    ]
   }
 }
 ```
 
-### Get Assets by Santri
+### Filter Assets by Santri
+Use the query parameter `santri_id` on the list endpoint.
+
 ```
-GET /api/santri-asset/santri/{santri_id}
+GET /api/santri-asset?santri_id={uuid}
 ```
 
-**Response (200 OK):**
-```json
-{
-  "success": true,
-  "message": "Data aset berhasil diambil",
-  "data": [
-    {
-      "id": "770e8400-e29b-41d4-a716-446655440002",
-      "jenis_aset": "motor",
-      "jumlah": 1,
-      "nilai_perkiraan": 15000000
-    }
-  ]
-}
-```
+**Response (200 OK):** same as "List All Assets".
 
 ### Create Asset
 ```
@@ -1023,34 +1200,159 @@ Content-Type: application/json
 ```json
 {
   "success": true,
-  "message": "Data aset berhasil ditambahkan",
-  "data": { ... }
+  "message": "Success",
+  "data": {
+    "id": "770e8400-e29b-41d4-a716-446655440002",
+    "santri_id": "550e8400-e29b-41d4-a716-446655440000",
+    "jenis_aset": "motor",
+    "jumlah": 1,
+    "nilai_perkiraan": 15000000,
+    "foto_asset": []
+  }
 }
+```
+
+Notes:
+- Valid `jenis_aset`: `motor`, `mobil`, `sepeda`, `hp`, `laptop`, `lahan`, `ternak`, `alat_kerja`, `lainnya`.
+- If your UI uses "handphone", map it to `hp` to avoid validation errors.
+- Upload photos separately via `POST /api/santri-asset/{asset_id}/photos`.
+
+### Bulk Create Assets (with Photos)
+Create multiple assets at once and optionally attach multiple photos for each.
+
+```
+POST /api/santri-asset/bulk
+Content-Type: multipart/form-data
+```
+
+**Form Fields:**
+- `assets`: JSON array of objects
+- `fotos_{index}`: files for the asset at that array index (e.g., `fotos_0`, `fotos_1`). You can also use alternative prefixes `foto_files_{index}`, `files_{index}`, `foto_asset_{index}`. If you send files without an index (e.g., `fotos`, `foto_files`, `files`, `foto_asset`), they will be attached to the first asset (index 0).
+
+Example `assets` JSON:
+```json
+[
+  {
+    "santri_id": "ae739ebe-2f19-43e1-9244-580bfb8a9acf",
+    "jenis_aset": "hp",
+    "jumlah": 1,
+    "nilai_perkiraan": 1000000
+  },
+  {
+    "santri_id": "ae739ebe-2f19-43e1-9244-580bfb8a9acf",
+    "jenis_aset": "motor",
+    "jumlah": 1,
+    "nilai_perkiraan": 15000000
+  }
+]
+```
+
+- `fotos_0`: files for the first asset (index 0)
+- `fotos_1`: files for the second asset (index 1)
+- Continue with `fotos_{index}` for each asset in the `assets` array, or use the alternative prefixes noted above.
+
+**Response (201 Created):**
+```json
+{
+  "success": true,
+  "message": "Success",
+  "data": [
+    {
+      "id": "770e8400-e29b-41d4-a716-446655440010",
+      "santri_id": "ae739ebe-2f19-43e1-9244-580bfb8a9acf",
+      "jenis_aset": "hp",
+      "jumlah": 1,
+      "nilai_perkiraan": 1000000,
+      "foto_asset": [
+        {
+          "id": "880e8400-e29b-41d4-a716-446655440100",
+          "asset_id": "770e8400-e29b-41d4-a716-446655440010",
+          "nama_file": "hp_1.jpg",
+          "url_photo": "/uploads/asset/hp_1.jpg"
+        }
+      ]
+    },
+    {
+      "id": "770e8400-e29b-41d4-a716-446655440011",
+      "santri_id": "ae739ebe-2f19-43e1-9244-580bfb8a9acf",
+      "jenis_aset": "motor",
+      "jumlah": 1,
+      "nilai_perkiraan": 15000000,
+      "foto_asset": []
+    }
+  ],
+  "meta": { "created_count": 2 }
+}
+```
+
+**Curl Example:**
+```bash
+curl -X POST http://127.0.0.1:8000/api/santri-asset/bulk \
+  -F "assets=[{\"santri_id\":\"ae739ebe-2f19-43e1-9244-580bfb8a9acf\",\"jenis_aset\":\"hp\",\"jumlah\":1,\"nilai_perkiraan\":1000000},{\"santri_id\":\"ae739ebe-2f19-43e1-9244-580bfb8a9acf\",\"jenis_aset\":\"motor\",\"jumlah\":1,\"nilai_perkiraan\":15000000}]" \
+  -F fotos_0=@hp_1.jpg \
+  -F fotos_0=@hp_2.jpg \
+  -F fotos_1=@motor_1.jpg
+```
+
+**Frontend (Vue/axios) Example:**
+```js
+const form = new FormData();
+const assets = [
+  { santri_id, jenis_aset: 'hp', jumlah: 1, nilai_perkiraan: 1000000 },
+  { santri_id, jenis_aset: 'motor', jumlah: 1, nilai_perkiraan: 15000000 }
+];
+form.append('assets', JSON.stringify(assets));
+
+// Attach photos for asset index 0
+form.append('fotos_0', fileHp1);
+form.append('fotos_0', fileHp2);
+
+// Attach photos for asset index 1
+form.append('fotos_1', fileMotor1);
+
+await axios.post('/api/santri-asset/bulk', form);
 ```
 
 ### Update Asset
+Update asset data with optional new photos (multipart/form-data).
+
 ```
 PUT /api/santri-asset/{asset_id}
-Content-Type: application/json
+Content-Type: multipart/form-data
 ```
 
-**Request Body:** (all optional)
-```json
-{
-  "jenis_aset": "mobil",
-  "jumlah": 2,
-  "nilai_perkiraan": 50000000
-}
+**Form Fields:** (all optional)
+```
+jenis_aset: "mobil"
+jumlah: 2
+nilai_perkiraan: 50000000
+fotos: [file1.jpg, file2.jpg] (optional, max 5MB each)
 ```
 
 **Response (200 OK):**
 ```json
 {
   "success": true,
-  "message": "Data aset berhasil diupdate",
-  "data": { ... }
+  "message": "Success",
+  "data": {
+    "id": "770e8400-e29b-41d4-a716-446655440002",
+    "santri_id": "550e8400-e29b-41d4-a716-446655440000",
+    "jenis_aset": "mobil",
+    "jumlah": 2,
+    "nilai_perkiraan": 50000000,
+    "foto_asset": [
+      {
+        "id": "990e8400-e29b-41d4-a716-446655440005",
+        "asset_id": "770e8400-e29b-41d4-a716-446655440002",
+        "nama_file": "mobil_1.jpg",
+        "url_photo": "/uploads/asset/770e8400-e29b-41d4-a716-446655440002/mobil_1.jpg"
+      }
+    ]
+  }
 }
 ```
+
+**Note:** Photos uploaded during update are added to existing photos (not replaced). To replace individual photos, use the update photo endpoint.
 
 ### Delete Asset
 ```
@@ -1061,9 +1363,9 @@ DELETE /api/santri-asset/{asset_id}
 ```json
 {
   "success": true,
-  "message": "Data aset berhasil dihapus",
+  "message": "Success",
   "data": {
-    "id": "770e8400-e29b-41d4-a716-446655440002"
+    "message": "Asset deleted successfully"
   }
 }
 ```
@@ -1085,7 +1387,7 @@ foto_files: [file1.jpg, file2.jpg, ...]
 ```json
 {
   "success": true,
-  "message": "2 foto berhasil ditambahkan",
+  "message": "Success",
   "data": [
     {
       "id": "880e8400-e29b-41d4-a716-446655440004",
@@ -1120,7 +1422,7 @@ foto: file.jpg
 ```json
 {
   "success": true,
-  "message": "Foto berhasil diupdate",
+  "message": "Photo updated successfully",
   "data": {
     "id": "880e8400-e29b-41d4-a716-446655440004",
     "asset_id": "770e8400-e29b-41d4-a716-446655440002",
@@ -1141,9 +1443,9 @@ DELETE /api/santri-asset/photos/{foto_id}
 ```json
 {
   "success": true,
-  "message": "Foto berhasil dihapus",
+  "message": "Success",
   "data": {
-    "id": "880e8400-e29b-41d4-a716-446655440004"
+    "message": "Photo deleted successfully"
   }
 }
 ```
@@ -1576,6 +1878,87 @@ POST /api/scoring/batch/calculate-all
     "errors": null
   }
 }
+```
+
+### Bulk Calculate Asset Scores
+Calculate scores for multiple santri at once (useful after adding/updating assets).
+
+```
+POST /api/scoring/bulk/calculate-asset
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "santri_ids": [
+    "550e8400-e29b-41d4-a716-446655440000",
+    "550e8400-e29b-41d4-a716-446655440001",
+    "550e8400-e29b-41d4-a716-446655440002"
+  ],
+  "metode": "rules.v1",
+  "version": "1.0.0"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "success": true,
+  "message": "Bulk scoring selesai: 3 berhasil, 0 gagal",
+  "data": {
+    "total_requested": 3,
+    "total_success": 3,
+    "total_errors": 0,
+    "results": [
+      {
+        "santri_id": "550e8400-e29b-41d4-a716-446655440000",
+        "skor_total": 66,
+        "skor_aset": 10,
+        "kategori_kemiskinan": "Miskin",
+        "success": true
+      },
+      {
+        "santri_id": "550e8400-e29b-41d4-a716-446655440001",
+        "skor_total": 52,
+        "skor_aset": 8,
+        "kategori_kemiskinan": "Rentan",
+        "success": true
+      },
+      {
+        "santri_id": "550e8400-e29b-41d4-a716-446655440002",
+        "skor_total": 45,
+        "skor_aset": 12,
+        "kategori_kemiskinan": "Rentan",
+        "success": true
+      }
+    ],
+    "errors": []
+  }
+}
+```
+
+**Curl Example:**
+```bash
+curl -X POST http://127.0.0.1:8000/api/scoring/bulk/calculate-asset \
+  -H "Content-Type: application/json" \
+  -d '{
+    "santri_ids": ["550e8400-e29b-41d4-a716-446655440000", "550e8400-e29b-41d4-a716-446655440001"],
+    "metode": "rules.v1",
+    "version": "1.0.0"
+  }'
+```
+
+**Frontend (Vue/axios) Example:**
+```js
+await axios.post('/api/scoring/bulk/calculate-asset', {
+  santri_ids: [
+    '550e8400-e29b-41d4-a716-446655440000',
+    '550e8400-e29b-41d4-a716-446655440001'
+  ],
+  metode: 'rules.v1',
+  version: '1.0.0'
+});
 ```
 
 ### Get Score by Santri ID

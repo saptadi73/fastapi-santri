@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, Enum, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from app.models.base import UUIDBase
 
 class SantriRumah(UUIDBase):
@@ -50,3 +51,6 @@ class SantriRumah(UUIDBase):
         ),
         nullable=True
     )
+    
+    # Relationships
+    foto_rumah = relationship("FotoRumah", back_populates="rumah", cascade="all, delete-orphan")

@@ -2,7 +2,18 @@
 
 from pydantic import BaseModel
 from uuid import UUID
-from typing import Optional
+from typing import Optional, List
+
+
+class FotoRumahResponse(BaseModel):
+    """Schema for foto rumah response."""
+    id: UUID
+    rumah_id: UUID
+    nama_file: str
+    url_photo: str
+
+    class Config:
+        from_attributes = True
 
 
 class SantriRumahCreate(BaseModel):
@@ -36,6 +47,7 @@ class SantriRumahResponse(BaseModel):
     jenis_atap: str
     akses_air_bersih: str
     daya_listrik_va: Optional[str] = None
+    foto_rumah: List[FotoRumahResponse] = []
 
     class Config:
         from_attributes = True

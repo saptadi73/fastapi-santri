@@ -2,7 +2,9 @@
 
 from typing import List, Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends, UploadFile, File, Form, Query
+from fastapi import APIRouter, Depends, UploadFile, File, Query, Form, Request
+import json
+from collections import defaultdict
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -103,48 +105,33 @@ async def get_asset_detail(
 
 @router.post("", response_model=None)
 async def create_asset(
+    request: Request,
     santri_id: UUID = Form(...),
     jenis_aset: str = Form(...),
-    jumlah: int = Form(default=1),
+    jumlah: int = Form(1),
     nilai_perkiraan: Optional[int] = Form(None),
-    fotos: List[UploadFile] = File(default=[]),
+    fotos: Optional[List[UploadFile]] = File(None),
     service: SantriAssetService = Depends(get_service)
 ):
-    """Create new asset with optional photos."""
+    """Create new asset with optional photos (multipart/form-data)."""
     try:
-        # Validate jenis_aset
-        valid_types = ["motor", "mobil", "sepeda", "hp", "laptop", "lahan", "ternak", "alat_kerja", "lainnya"]
-        if jenis_aset not in valid_types:
-            return error_response(
-                f"jenis_aset must be one of: {', '.join(valid_types)}",
-                error_code="VALIDATION_ERROR"
-            )
-        
-        # Validate jumlah
-        if jumlah < 1:
-            return error_response(
-                "jumlah must be greater than 0",
-                error_code="VALIDATION_ERROR"
-            )
-        
         data = SantriAssetCreate(
             santri_id=santri_id,
             jenis_aset=jenis_aset,
-            jumlah=jumlah,
+            jumlah=jumlah if jumlah is not None else 1,
             nilai_perkiraan=nilai_perkiraan
         )
-        
-        asset = await service.create(santri_id, data, fotos if fotos else None)
-        
-        fotos_response = [
-            {
-                "id": str(f.id),
-                "asset_id": str(f.asset_id),
-                "nama_file": f.nama_file,
-                "url_photo": f.url_photo
-            }
-            for f in asset.foto_asset
-        ]
+
+        # Support multiple possible file field names: fotos / foto_files / files / foto_asset
+        if not fotos or (isinstance(fotos, list) and len(fotos) == 0):
+            form = await request.form()
+            collected: List[UploadFile] = []
+            for key, val in form.multi_items():
+                if isinstance(val, UploadFile) and key in {"fotos", "foto_files", "files", "foto_asset"}:
+                    collected.append(val)
+            fotos = collected if collected else None
+
+        asset = await service.create(data.santri_id, data, fotos)
         
         result = {
             "id": str(asset.id),
@@ -152,63 +139,54 @@ async def create_asset(
             "jenis_aset": asset.jenis_aset,
             "jumlah": asset.jumlah,
             "nilai_perkiraan": asset.nilai_perkiraan,
-            "foto_asset": fotos_response
+            "foto_asset": [
+                {
+                    "id": str(f.id),
+                    "asset_id": str(f.asset_id),
+                    "nama_file": f.nama_file,
+                    "url_photo": f.url_photo
+                }
+                for f in asset.foto_asset
+            ]
         }
         
         return success_response(result, status_code=201)
         
-    except ValueError as e:
-        return error_response(str(e), error_code="VALIDATION_ERROR")
     except Exception as e:
-        return error_response(f"Failed to create asset: {str(e)}", error_code="UPLOAD_ERROR")
+        return error_response(f"Failed to create asset: {str(e)}", error_code="INTERNAL_ERROR")
 
 
 @router.put("/{asset_id}", response_model=None)
 async def update_asset(
+    request: Request,
     asset_id: UUID,
     jenis_aset: Optional[str] = Form(None),
     jumlah: Optional[int] = Form(None),
     nilai_perkiraan: Optional[int] = Form(None),
+    fotos: Optional[List[UploadFile]] = File(None),
     service: SantriAssetService = Depends(get_service)
 ):
-    """Update asset by ID."""
+    """Update asset by ID with optional new photos (multipart/form-data)."""
     try:
-        # Validate jenis_aset if provided
-        if jenis_aset:
-            valid_types = ["motor", "mobil", "sepeda", "hp", "laptop", "lahan", "ternak", "alat_kerja", "lainnya"]
-            if jenis_aset not in valid_types:
-                return error_response(
-                    f"jenis_aset must be one of: {', '.join(valid_types)}",
-                    error_code="VALIDATION_ERROR"
-                )
-        
-        # Validate jumlah if provided
-        if jumlah is not None and jumlah < 1:
-            return error_response(
-                "jumlah must be greater than 0",
-                error_code="VALIDATION_ERROR"
-            )
-        
         data = SantriAssetUpdate(
             jenis_aset=jenis_aset,
             jumlah=jumlah,
             nilai_perkiraan=nilai_perkiraan
         )
         
-        asset = await service.update(asset_id, data)
+        # Support multiple possible file field names: fotos / foto_files / files / foto_asset
+        if not fotos or (isinstance(fotos, list) and len(fotos) == 0):
+            form = await request.form()
+            collected: List[UploadFile] = []
+            for key, val in form.multi_items():
+                if isinstance(val, UploadFile) and key in {"fotos", "foto_files", "files", "foto_asset"}:
+                    collected.append(val)
+            fotos = collected if collected else None
+        
+        asset = await service.update(asset_id, data, fotos)
         
         if not asset:
             return error_response("Asset not found", error_code="NOT_FOUND")
-        
-        fotos_response = [
-            {
-                "id": str(f.id),
-                "asset_id": str(f.asset_id),
-                "nama_file": f.nama_file,
-                "url_photo": f.url_photo
-            }
-            for f in asset.foto_asset
-        ]
         
         result = {
             "id": str(asset.id),
@@ -216,13 +194,19 @@ async def update_asset(
             "jenis_aset": asset.jenis_aset,
             "jumlah": asset.jumlah,
             "nilai_perkiraan": asset.nilai_perkiraan,
-            "foto_asset": fotos_response
+            "foto_asset": [
+                {
+                    "id": str(f.id),
+                    "asset_id": str(f.asset_id),
+                    "nama_file": f.nama_file,
+                    "url_photo": f.url_photo
+                }
+                for f in asset.foto_asset
+            ]
         }
         
         return success_response(result)
         
-    except ValueError as e:
-        return error_response(str(e), error_code="VALIDATION_ERROR")
     except Exception as e:
         return error_response(f"Failed to update asset: {str(e)}", error_code="INTERNAL_ERROR")
 
@@ -243,6 +227,103 @@ async def delete_asset(
         
     except Exception as e:
         return error_response(f"Failed to delete asset: {str(e)}", error_code="INTERNAL_ERROR")
+
+
+@router.post("/bulk", response_model=None)
+async def create_assets_bulk(
+    request: Request,
+    assets: str = Form(..., description="JSON array of assets to create"),
+    service: SantriAssetService = Depends(get_service)
+):
+    """Bulk create assets with optional grouped photos per asset.
+    
+    Expects multipart/form-data with:
+    - assets: JSON array of objects [{ santri_id, jenis_aset, jumlah, nilai_perkiraan }]
+    - fotos_{index}: one or more files for the asset at that array index (e.g., fotos_0, fotos_1)
+    """
+    try:
+        # Parse JSON payload
+        try:
+            assets_payload = json.loads(assets)
+            if not isinstance(assets_payload, list):
+                return error_response("assets must be a JSON array", error_code="VALIDATION_ERROR")
+        except json.JSONDecodeError:
+            return error_response("Invalid JSON in assets field", error_code="VALIDATION_ERROR")
+
+        # Collect uploaded files grouped by index with flexible key names
+        fotos_by_index = defaultdict(list)
+        form = await request.form()
+        # Accept prefixes: fotos_, foto_files_, files_, foto_asset_ (plus unsuffixed fallback to index 0)
+        allowed_prefixes = ["fotos_", "foto_files_", "files_", "foto_asset_"]
+        fallback_keys = {"fotos", "foto_files", "files", "foto_asset"}
+        for key, val in form.multi_items():
+            if not isinstance(val, UploadFile):
+                continue
+            matched = False
+            for prefix in allowed_prefixes:
+                if key.startswith(prefix):
+                    try:
+                        idx = int(key[len(prefix):])
+                    except ValueError:
+                        matched = True
+                        break
+                    fotos_by_index[idx].append(val)
+                    matched = True
+                    break
+            if matched:
+                continue
+            if key in fallback_keys:
+                fotos_by_index[0].append(val)
+
+        created = []
+
+        # Optional normalization for common UI value
+        def normalize_jenis_aset(v: Optional[str]) -> Optional[str]:
+            mapping = {"handphone": "hp"}
+            return mapping.get(v, v) if v is not None else None
+
+        # Validate and create each asset
+        for i, item in enumerate(assets_payload):
+            if not isinstance(item, dict):
+                return error_response(f"assets[{i}] must be an object", error_code="VALIDATION_ERROR")
+
+            # Normalize and construct schema
+            item_data = {
+                "santri_id": item.get("santri_id"),
+                "jenis_aset": normalize_jenis_aset(item.get("jenis_aset")),
+                "jumlah": item.get("jumlah", 1),
+                "nilai_perkiraan": item.get("nilai_perkiraan")
+            }
+
+            try:
+                data_obj = SantriAssetCreate(**item_data)
+            except Exception as e:
+                return error_response(f"assets[{i}] validation error: {str(e)}", error_code="VALIDATION_ERROR")
+
+            fotos = fotos_by_index.get(i) or None
+            asset = await service.create(data_obj.santri_id, data_obj, fotos)
+
+            created.append({
+                "id": str(asset.id),
+                "santri_id": str(asset.santri_id),
+                "jenis_aset": asset.jenis_aset,
+                "jumlah": asset.jumlah,
+                "nilai_perkiraan": asset.nilai_perkiraan,
+                "foto_asset": [
+                    {
+                        "id": str(f.id),
+                        "asset_id": str(f.asset_id),
+                        "nama_file": f.nama_file,
+                        "url_photo": f.url_photo
+                    } for f in asset.foto_asset
+                ]
+            })
+
+        meta = {"created_count": len(created)}
+        return success_response(created, status_code=201, meta=meta)
+
+    except Exception as e:
+        return error_response(f"Failed to bulk create assets: {str(e)}", error_code="UPLOAD_ERROR")
 
 
 @router.post("/{asset_id}/photos", response_model=None)

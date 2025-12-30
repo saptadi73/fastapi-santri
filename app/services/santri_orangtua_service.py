@@ -93,14 +93,14 @@ class SantriOrangtuaService:
             # Upload photos if provided
             if foto_files:
                 for foto_file in foto_files:
-                    url_photo = await self.file_handler.save_file(
+                    file_path, filename = await self.file_handler.save_file(
                         foto_file, f"{orangtua.id}"
                     )
                     
                     foto = FotoOrangtua(
                         orangtua_id=orangtua.id,
-                        nama_file=foto_file.filename,
-                        url_photo=url_photo
+                        nama_file=filename,
+                        url_photo=file_path
                     )
                     self.db.add(foto)
             
@@ -115,9 +115,10 @@ class SantriOrangtuaService:
     async def update(
         self,
         orangtua_id: UUID,
-        data: SantriOrangtuaUpdate
+        data: SantriOrangtuaUpdate,
+        foto_files: Optional[List[UploadFile]] = None
     ) -> Optional[SantriOrangtua]:
-        """Update orangtua by ID."""
+        """Update orangtua by ID with optional new photos."""
         orangtua = self.db.query(SantriOrangtua).filter(
             SantriOrangtua.id == orangtua_id
         ).first()
@@ -125,15 +126,32 @@ class SantriOrangtuaService:
         if not orangtua:
             return None
         
-        # Update fields
-        update_data = data.model_dump(exclude_unset=True)
-        for field, value in update_data.items():
-            if value is not None:
-                setattr(orangtua, field, value)
-        
-        self.db.commit()
-        self.db.refresh(orangtua)
-        return orangtua
+        try:
+            # Update fields if provided
+            update_data = data.model_dump(exclude_unset=True)
+            for field, value in update_data.items():
+                if value is not None:
+                    setattr(orangtua, field, value)
+            
+            # Upload new photos if provided
+            if foto_files:
+                for foto_file in foto_files:
+                    file_path, filename = await self.file_handler.save_file(
+                        foto_file, f"{orangtua_id}"
+                    )
+                    foto = FotoOrangtua(
+                        orangtua_id=orangtua_id,
+                        nama_file=filename,
+                        url_photo=file_path
+                    )
+                    self.db.add(foto)
+            
+            self.db.commit()
+            self.db.refresh(orangtua)
+            return orangtua
+        except Exception as e:
+            self.db.rollback()
+            raise HTTPException(status_code=500, detail=f"Failed to update orangtua: {str(e)}")
     
     async def delete(self, orangtua_id: UUID) -> bool:
         """Delete orangtua and related photos."""
@@ -174,14 +192,14 @@ class SantriOrangtuaService:
         fotos = []
         try:
             for foto_file in foto_files:
-                url_photo = await self.file_handler.save_file(
+                file_path, filename = await self.file_handler.save_file(
                     foto_file, f"{orangtua_id}"
                 )
                 
                 foto = FotoOrangtua(
                     orangtua_id=orangtua_id,
-                    nama_file=foto_file.filename,
-                    url_photo=url_photo
+                    nama_file=filename,
+                    url_photo=file_path
                 )
                 self.db.add(foto)
                 fotos.append(foto)
@@ -236,15 +254,15 @@ class SantriOrangtuaService:
             
             # Upload new file
             orangtua_id = foto.orangtua_id
-            url_photo = await self.file_handler.save_file(
+            file_path, filename = await self.file_handler.save_file(
                 new_foto_file, f"{orangtua_id}"
             )
             
             # Update database record using SQLAlchemy update
             from sqlalchemy import update
             stmt = update(FotoOrangtua).where(FotoOrangtua.id == foto_id).values(
-                nama_file=new_foto_file.filename,
-                url_photo=url_photo
+                nama_file=filename,
+                url_photo=file_path
             )
             self.db.execute(stmt)
             self.db.commit()

@@ -2,7 +2,7 @@
 
 from typing import List, Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends, UploadFile, File, Form, Query
+from fastapi import APIRouter, Depends, UploadFile, File, Form, Query, Request
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -46,13 +46,23 @@ async def get_all_orangtua(
         
         result = []
         for orangtua in orangtua_list:
+            fotos = [
+                {
+                    "id": str(foto.id),
+                    "nama_file": foto.nama_file,
+                    "url_photo": foto.url_photo
+                }
+                for foto in (orangtua.foto_orangtua or [])
+            ]
+
             orangtua_dict = {
                 "id": str(orangtua.id),
                 "nama": orangtua.nama,
                 "hubungan": orangtua.hubungan,
                 "pekerjaan": orangtua.pekerjaan,
                 "status_hidup": orangtua.status_hidup,
-                "foto_count": len(orangtua.foto_orangtua) if orangtua.foto_orangtua else 0
+                "foto_count": len(fotos),
+                "foto_orangtua": fotos
             }
             result.append(orangtua_dict)
         
@@ -109,6 +119,7 @@ async def get_orangtua_detail(
 
 @router.post("", response_model=None)
 async def create_orangtua(
+    request: Request,
     santri_id: UUID = Form(...),
     nama: str = Form(...),
     hubungan: str = Form(...),
@@ -118,7 +129,7 @@ async def create_orangtua(
     pendapatan_bulanan: Optional[int] = Form(None),
     status_hidup: Optional[str] = Form(None),
     kontak_telepon: Optional[str] = Form(None),
-    fotos: List[UploadFile] = File(default=[]),
+    fotos: Optional[List[UploadFile]] = File(None),
     service: SantriOrangtuaService = Depends(get_service)
 ):
     """Create new orangtua with optional photos."""
@@ -149,7 +160,16 @@ async def create_orangtua(
             kontak_telepon=kontak_telepon
         )
         
-        orangtua = await service.create(santri_id, data, fotos if fotos else None)
+        # Support multiple possible file field names: fotos / foto_files / files / foto_orangtua
+        if not fotos or (isinstance(fotos, list) and len(fotos) == 0):
+            form = await request.form()
+            collected: List[UploadFile] = []
+            for key, val in form.multi_items():
+                if isinstance(val, UploadFile) and key in {"fotos", "foto_files", "files", "foto_orangtua"}:
+                    collected.append(val)
+            fotos = collected if collected else None
+
+        orangtua = await service.create(santri_id, data, fotos)
         
         fotos_response = [
             {
@@ -181,101 +201,6 @@ async def create_orangtua(
         return error_response(str(e), error_code="VALIDATION_ERROR")
     except Exception as e:
         return error_response(f"Failed to create orangtua: {str(e)}", error_code="UPLOAD_ERROR")
-
-
-@router.put("/{orangtua_id}", response_model=None)
-async def update_orangtua(
-    orangtua_id: UUID,
-    nama: Optional[str] = Form(None),
-    nik: Optional[str] = Form(None),
-    hubungan: Optional[str] = Form(None),
-    pendidikan: Optional[str] = Form(None),
-    pekerjaan: Optional[str] = Form(None),
-    pendapatan_bulanan: Optional[int] = Form(None),
-    status_hidup: Optional[str] = Form(None),
-    kontak_telepon: Optional[str] = Form(None),
-    service: SantriOrangtuaService = Depends(get_service)
-):
-    """Update orangtua by ID."""
-    try:
-        # Validate hubungan if provided
-        if hubungan and hubungan not in ["ayah", "ibu", "wali"]:
-            return error_response(
-                "hubungan must be 'ayah', 'ibu', or 'wali'",
-                error_code="VALIDATION_ERROR"
-            )
-        
-        # Validate status_hidup if provided
-        if status_hidup and status_hidup not in ["hidup", "meninggal"]:
-            return error_response(
-                "status_hidup must be 'hidup' or 'meninggal'",
-                error_code="VALIDATION_ERROR"
-            )
-        
-        data = SantriOrangtuaUpdate(
-            nama=nama,
-            nik=nik,
-            hubungan=hubungan,
-            pendidikan=pendidikan,
-            pekerjaan=pekerjaan,
-            pendapatan_bulanan=pendapatan_bulanan,
-            status_hidup=status_hidup,
-            kontak_telepon=kontak_telepon
-        )
-        
-        orangtua = await service.update(orangtua_id, data)
-        
-        if not orangtua:
-            return error_response("Orangtua not found", error_code="NOT_FOUND")
-        
-        fotos_response = [
-            {
-                "id": str(f.id),
-                "orangtua_id": str(f.orangtua_id),
-                "nama_file": f.nama_file,
-                "url_photo": f.url_photo
-            }
-            for f in orangtua.foto_orangtua
-        ]
-        
-        result = {
-            "id": str(orangtua.id),
-            "santri_id": str(orangtua.santri_id),
-            "nama": orangtua.nama,
-            "nik": orangtua.nik,
-            "hubungan": orangtua.hubungan,
-            "pendidikan": orangtua.pendidikan,
-            "pekerjaan": orangtua.pekerjaan,
-            "pendapatan_bulanan": orangtua.pendapatan_bulanan,
-            "status_hidup": orangtua.status_hidup,
-            "kontak_telepon": orangtua.kontak_telepon,
-            "foto_orangtua": fotos_response
-        }
-        
-        return success_response(result)
-        
-    except ValueError as e:
-        return error_response(str(e), error_code="VALIDATION_ERROR")
-    except Exception as e:
-        return error_response(f"Failed to update orangtua: {str(e)}", error_code="INTERNAL_ERROR")
-
-
-@router.delete("/{orangtua_id}", response_model=None)
-async def delete_orangtua(
-    orangtua_id: UUID,
-    service: SantriOrangtuaService = Depends(get_service)
-):
-    """Delete orangtua and related photos."""
-    try:
-        success = await service.delete(orangtua_id)
-        
-        if not success:
-            return error_response("Orangtua not found", error_code="NOT_FOUND")
-        
-        return success_response({"message": "Orangtua deleted successfully"})
-        
-    except Exception as e:
-        return error_response(f"Failed to delete orangtua: {str(e)}", error_code="INTERNAL_ERROR")
 
 
 @router.post("/{orangtua_id}/photos", response_model=None)
@@ -333,19 +258,109 @@ async def update_orangtua_photo(
         return error_response(f"Failed to update photo: {str(e)}", error_code="UPLOAD_ERROR")
 
 
-@router.delete("/photos/{foto_id}", response_model=None)
-async def delete_orangtua_photo(
-    foto_id: UUID,
+@router.put("/{orangtua_id}", response_model=None)
+async def update_orangtua(
+    request: Request,
+    orangtua_id: UUID,
+    nama: Optional[str] = Form(None),
+    nik: Optional[str] = Form(None),
+    hubungan: Optional[str] = Form(None),
+    pendidikan: Optional[str] = Form(None),
+    pekerjaan: Optional[str] = Form(None),
+    pendapatan_bulanan: Optional[int] = Form(None),
+    status_hidup: Optional[str] = Form(None),
+    kontak_telepon: Optional[str] = Form(None),
+    fotos: Optional[List[UploadFile]] = File(None),
     service: SantriOrangtuaService = Depends(get_service)
 ):
-    """Delete single orangtua photo."""
+    """Update orangtua by ID with optional new photos (multipart/form-data)."""
     try:
-        success = await service.delete_photo(foto_id)
+        # Validate hubungan if provided
+        if hubungan and hubungan not in ["ayah", "ibu", "wali"]:
+            return error_response(
+                "hubungan must be 'ayah', 'ibu', or 'wali'",
+                error_code="VALIDATION_ERROR"
+            )
+        
+        # Validate status_hidup if provided
+        if status_hidup and status_hidup not in ["hidup", "meninggal"]:
+            return error_response(
+                "status_hidup must be 'hidup' or 'meninggal'",
+                error_code="VALIDATION_ERROR"
+            )
+        
+        data = SantriOrangtuaUpdate(
+            nama=nama,
+            nik=nik,
+            hubungan=hubungan,
+            pendidikan=pendidikan,
+            pekerjaan=pekerjaan,
+            pendapatan_bulanan=pendapatan_bulanan,
+            status_hidup=status_hidup,
+            kontak_telepon=kontak_telepon
+        )
+
+        # Fallback collect files if bound param is empty/missing
+        if not fotos or (isinstance(fotos, list) and len(fotos) == 0):
+            form = await request.form()
+            collected: List[UploadFile] = []
+            for key, val in form.multi_items():
+                if isinstance(val, UploadFile) and key in {"fotos", "foto_files", "files", "foto_orangtua"}:
+                    collected.append(val)
+            fotos = collected if collected else None
+        
+        orangtua = await service.update(orangtua_id, data, fotos)
+        
+        if not orangtua:
+            return error_response(
+                message="Orangtua not found",
+                error_code="NOT_FOUND"
+            )
+        
+        fotos_resp = [
+            {
+                "id": str(foto.id),
+                "orangtua_id": str(foto.orangtua_id),
+                "nama_file": foto.nama_file,
+                "url_photo": foto.url_photo
+            }
+            for foto in orangtua.foto_orangtua
+        ]
+        
+        result = {
+            "id": str(orangtua.id),
+            "santri_id": str(orangtua.santri_id),
+            "nama": orangtua.nama,
+            "nik": orangtua.nik,
+            "hubungan": orangtua.hubungan,
+            "pendidikan": orangtua.pendidikan,
+            "pekerjaan": orangtua.pekerjaan,
+            "pendapatan_bulanan": orangtua.pendapatan_bulanan,
+            "status_hidup": orangtua.status_hidup,
+            "kontak_telepon": orangtua.kontak_telepon,
+            "foto_orangtua": fotos_resp
+        }
+        
+        return success_response(result)
+    except ValueError as e:
+        return error_response(str(e), error_code="VALIDATION_ERROR")
+    except Exception as e:
+        return error_response(f"Failed to update orangtua: {str(e)}", error_code="INTERNAL_ERROR")
+
+
+@router.delete("/{orangtua_id}", response_model=None)
+async def delete_orangtua(
+    orangtua_id: UUID,
+    service: SantriOrangtuaService = Depends(get_service)
+):
+    """Delete orangtua and related photos."""
+    try:
+        success = await service.delete(orangtua_id)
         
         if not success:
-            return error_response("Photo not found", error_code="NOT_FOUND")
+            return error_response("Orangtua not found", error_code="NOT_FOUND")
         
-        return success_response({"message": "Photo deleted successfully"})
+        return success_response({"message": "Orangtua deleted successfully"})
         
     except Exception as e:
-        return error_response(f"Failed to delete photo: {str(e)}", error_code="INTERNAL_ERROR")
+        return error_response(f"Failed to delete orangtua: {str(e)}", error_code="INTERNAL_ERROR")
