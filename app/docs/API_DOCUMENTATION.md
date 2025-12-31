@@ -1607,14 +1607,14 @@ GET /api/santri-kesehatan?page=1&per_page=20&santri_id={uuid}&pesantren_id={uuid
   "message": "Data kesehatan berhasil diambil",
   "data": [
     {
-      "id": "990e8400-e29b-41d4-a716-446655440004",
-      "santri_id": "550e8400-e29b-41d4-a716-446655440000",
-      "tinggi_badan": 165.5,
-      "berat_badan": 55.0,
-      "status_gizi": "baik",
-      "riwayat_penyakit": "Demam tinggi",
-      "alergi_obat": "Amoksisilin",
-      "kebutuhan_khusus": null
+      "tinggi_badan": 166,
+      "berat_badan": 65,
+      "status_gizi": null,
+      "riwayat_penyakit": "Tidak ada",
+      "alergi_obat": null,
+      "kebutuhan_khusus": "Tidak ada",
+      "id": "db222f23-e5d2-488b-992e-7695a8aee26f",
+      "santri_id": "ae739ebe-2f19-43e1-9244-580bfb8a9acf"
     }
   ],
   "pagination": { ... }
@@ -1640,13 +1640,13 @@ Content-Type: application/json
 **Request Body:**
 ```json
 {
-  "santri_id": "550e8400-e29b-41d4-a716-446655440000",
-  "tinggi_badan": 165.5,
-  "berat_badan": 55.0,
-  "status_gizi": "baik",
-  "riwayat_penyakit": "Demam tinggi",
-  "alergi_obat": "Amoksisilin",
-  "kebutuhan_khusus": null
+  "santri_id": "ae739ebe-2f19-43e1-9244-580bfb8a9acf",
+  "tinggi_badan": 166,
+  "berat_badan": 65,
+  "status_gizi": null,
+  "riwayat_penyakit": "Tidak ada",
+  "alergi_obat": null,
+  "kebutuhan_khusus": "Tidak ada"
 }
 ```
 
@@ -1655,7 +1655,16 @@ Content-Type: application/json
 {
   "success": true,
   "message": "Data kesehatan berhasil ditambahkan",
-  "data": { ... }
+  "data": {
+    "tinggi_badan": 166,
+    "berat_badan": 65,
+    "status_gizi": null,
+    "riwayat_penyakit": "Tidak ada",
+    "alergi_obat": null,
+    "kebutuhan_khusus": "Tidak ada",
+    "id": "db222f23-e5d2-488b-992e-7695a8aee26f",
+    "santri_id": "ae739ebe-2f19-43e1-9244-580bfb8a9acf"
+  }
 }
 ```
 
@@ -1668,9 +1677,12 @@ Content-Type: application/json
 **Request Body:** (all optional)
 ```json
 {
-  "berat_badan": 56.5,
+  "tinggi_badan": 167,
+  "berat_badan": 66,
   "status_gizi": "baik",
-  "riwayat_penyakit": "Demam tinggi, perlu pemeriksaan lanjut"
+  "riwayat_penyakit": "Tidak ada",
+  "alergi_obat": "Paracetamol",
+  "kebutuhan_khusus": "Tidak ada"
 }
 ```
 
@@ -1812,6 +1824,13 @@ DELETE /api/santri-pembiayaan/{pembiayaan_id}
 ---
 
 ## Scoring System
+
+**System Overview:**
+This system has two separate scoring modules:
+1. **Santri Scoring** (this section) - Assesses poverty level of individual santri
+2. **Pesantren Scoring** (see [Pesantren Scoring System](#pesantren-scoring-system)) - Assesses quality/eligibility of pesantren
+
+**Santri Scoring Focus:** Analyzes santri's economic situation, living conditions, assets, and support received.
 
 ### Calculate Single Santri Score
 Calculate poverty score for a single santri based on `scoring.json` config.
@@ -2028,12 +2047,20 @@ Based on `scoring.json` configuration:
 
 | Dimensi | Bobot | Skor Maks | Parameters |
 |---------|-------|-----------|-----------|
-| Ekonomi | 30% | 40 | penghasilan_bulanan, jumlah_tanggungan, status_pekerjaan |
-| Rumah | 25% | 43 | status_kepemilikan, luas_per_orang, lantai, sanitasi |
-| Aset | 15% | 23 | motor, mobil, lahan |
-| Pembiayaan | 15% | 25 | sumber_biaya, tunggakan |
-| Kesehatan | 10% | 25 | penyakit_kronis, bpjs_aktif |
-| Bansos | 5% | 17 | pernah_menerima, dtks |
+| Ekonomi | 30% | 40 | pendapatan_bulanan (orangtua), pekerjaan (orangtua), pendidikan (orangtua) |
+| Rumah | 25% | 43 | status_rumah, jenis_lantai, jenis_dinding, jenis_atap, akses_air_bersih, daya_listrik_va |
+| Aset | 15% | 23 | motor, mobil, lahan, hp (count per jenis aset) |
+| Pembiayaan | 15% | 25 | sumber_biaya, status_pembayaran, tunggakan_bulan |
+| Kesehatan | 10% | 25 | status_gizi, riwayat_penyakit, kebutuhan_khusus |
+| Bansos | 5% | 17 | pkh, bpnt, pip, kis_pbi, blt_desa (false = skor tinggi, belum menerima bantuan) |
+
+**Key Scoring Logic:**
+- **Ekonomi**: Pendapatan < 500K = 30 poin, Pekerjaan buruh/petani = 5 poin, Pendidikan SD/tidak sekolah = 5 poin
+- **Rumah**: Status menumpang = 10 poin, Lantai tanah = 10 poin, Dinding bambu = 8 poin, Listrik 450VA = 8 poin
+- **Aset**: Tidak punya motor/mobil/lahan/HP = skor tinggi (kemiskinan)
+- **Pembiayaan**: Sumber donatur/beasiswa = skor tinggi, Status menunggak = 10 poin
+- **Kesehatan**: Status gizi kurang = 10 poin, Ada riwayat penyakit = 8 poin
+- **Bansos**: Belum menerima PKH/PIP/BPNT/KIS = skor tinggi (indikator perlu bantuan)
 
 ---
 
@@ -2211,19 +2238,23 @@ GET /pesantren-fisik/pesantren/{pesantren_id}
   "pesantren_id": "uuid",
   "luas_tanah": 5000.0,
   "luas_bangunan": 3000.0,
-  "status_bangunan": "milik_sendiri",
   "kondisi_bangunan": "permanen",
+  "status_bangunan": "milik_sendiri",
+  "rasio_kepadatan_kamar": 5.5,
+  "sanitasi": "layak",
+  "air_bersih": "lancar",
   "sumber_air": "PDAM",
   "kualitas_air_bersih": "layak_minum",
   "fasilitas_mck": "lengkap",
   "jumlah_mck": 20,
+  "keamanan_bangunan": "tinggi",
+  "sistem_keamanan": "CCTV dan satpam 24 jam",
   "jenis_lantai": "keramik",
   "jenis_dinding": "tembok",
   "jenis_atap": "genteng_tanah_liat",
   "sumber_listrik": "PLN",
   "daya_listrik_va": "5500",
-  "kestabilan_listrik": "stabil",
-  "sistem_keamanan": "ada"
+  "kestabilan_listrik": "stabil"
 }
 ```
 
@@ -2245,21 +2276,49 @@ POST /pesantren-fisik
   "pesantren_id": "uuid",
   "luas_tanah": 5000.0,
   "luas_bangunan": 3000.0,
-  "status_bangunan": "milik_sendiri",
   "kondisi_bangunan": "permanen",
+  "status_bangunan": "milik_sendiri",
+  "rasio_kepadatan_kamar": 5.5,
+  "sanitasi": "layak",
+  "air_bersih": "lancar",
   "sumber_air": "PDAM",
   "kualitas_air_bersih": "layak_minum",
   "fasilitas_mck": "lengkap",
   "jumlah_mck": 20,
+  "keamanan_bangunan": "tinggi",
+  "sistem_keamanan": "CCTV dan satpam 24 jam",
   "jenis_lantai": "keramik",
   "jenis_dinding": "tembok",
   "jenis_atap": "genteng_tanah_liat",
   "sumber_listrik": "PLN",
   "daya_listrik_va": "5500",
-  "kestabilan_listrik": "stabil",
-  "sistem_keamanan": "ada"
+  "kestabilan_listrik": "stabil"
 }
 ```
+
+**Required Fields:**
+- `pesantren_id` (UUID)
+- `kondisi_bangunan` (permanen/semi_permanen/non_permanen)
+- `rasio_kepadatan_kamar` (float, must be >= 0)
+- `sanitasi` (layak/cukup/tidak_layak)
+- `air_bersih` (lancar/terbatas/tidak_tersedia)
+- `keamanan_bangunan` (tinggi/standar/minim/tidak_aman)
+- `jenis_lantai` (marmer/keramik/beton/kayu/tanah)
+- `jenis_atap` (genteng_tanah_liat/metal/upvc/seng/asbes/ijuk)
+- `jenis_dinding` (tembok/papan/kayu/bambu/anyaman)
+
+**Optional Fields:**
+- `luas_tanah` (float, dalam m²)
+- `luas_bangunan` (float, dalam m²)
+- `status_bangunan` (milik_sendiri/wakaf/hibah/pinjam/sewa)
+- `sumber_air` (PDAM/sumur/berbagai_macam/hujan/sungai)
+- `kualitas_air_bersih` (layak_minum/keruh/berbau/asin)
+- `fasilitas_mck` (lengkap/cukup/kurang_lengkap/tidak_layak)
+- `jumlah_mck` (integer, jumlah MCK)
+- `sistem_keamanan` (string, deskripsi sistem keamanan)
+- `sumber_listrik` (PLN/genset/listrik_tidak_ada/tenaga_surya)
+- `daya_listrik_va` (string, contoh: "450", "900", "1300", "2200", "3500", "5500")
+- `kestabilan_listrik` (stabil/tidak_stabil/tidak_ada)
 
 **Response (201 Created):** Same as detail response
 
@@ -2285,6 +2344,8 @@ DELETE /pesantren-fisik/{fisik_id}
 
 ## Pesantren Fasilitas (Facilities)
 
+**Note:** This module focuses on educational and support facilities. Infrastructure-related facilities like MCK, water, and electricity are managed in `/pesantren-fisik`. Payment methods are managed in `/pesantren-pendidikan`.
+
 ### Get Fasilitas by Pesantren ID
 ```
 GET /pesantren-fasilitas/pesantren/{pesantren_id}
@@ -2301,15 +2362,19 @@ GET /pesantren-fasilitas/pesantren/{pesantren_id}
   "perpustakaan": true,
   "laboratorium": true,
   "ruang_komputer": true,
-  "fasilitas_olahraga": "lapangan_futsal,basket",
-  "fasilitas_kesehatan": "klinik",
   "koperasi": true,
   "kantin": true,
+  "fasilitas_olahraga": "lapangan_futsal,basket",
+  "fasilitas_kesehatan": "klinik",
   "fasilitas_mengajar": "projector,whiteboard",
   "fasilitas_komunikasi": "internet,telepon",
   "akses_transportasi": "angkutan_umum",
-  "akses_jalan": "aspal",
-  "jarak_ke_kota_km": 5.5
+  "jarak_ke_kota_km": 5.5,
+  "asrama": "layak",
+  "ruang_belajar": "layak",
+  "internet": "stabil",
+  "fasilitas_transportasi": "angkutan_umum",
+  "akses_jalan": "aspal"
 }
 ```
 
@@ -2325,7 +2390,38 @@ GET /pesantren-fasilitas/{fasilitas_id}
 POST /pesantren-fasilitas
 ```
 
-**Request Body:** Same as response above (all fields optional except pesantren_id)
+**Request Body:** (all fields optional except pesantren_id)
+```json
+{
+  "pesantren_id": "uuid",
+  "jumlah_kamar": 50,
+  "jumlah_ruang_kelas": 20,
+  "jumlah_masjid": 1,
+  "perpustakaan": true,
+  "laboratorium": true,
+  "ruang_komputer": true,
+  "koperasi": true,
+  "kantin": true,
+  "fasilitas_olahraga": "lapangan_futsal,basket",
+  "fasilitas_kesehatan": "klinik",
+  "fasilitas_mengajar": "projector,whiteboard",
+  "fasilitas_komunikasi": "internet,telepon",
+  "akses_transportasi": "angkutan_umum",
+  "jarak_ke_kota_km": 5.5,
+  "asrama": "layak",
+  "ruang_belajar": "layak",
+  "internet": "stabil",
+  "fasilitas_transportasi": "bus",
+  "akses_jalan": "aspal"
+}
+```
+
+**Required Enum Values:**
+- `asrama`: **layak**, cukup, tidak_layak
+- `ruang_belajar`: **layak**, cukup, tidak_layak
+- `internet`: **stabil**, tidak_stabil, tidak_ada
+- `fasilitas_transportasi`: **bus**, angkutan_umum, kendaraan_pribadi, ojek
+- `akses_jalan`: **aspal**, cor_block, tanah, kerikil
 
 **Response (201 Created):** Same as detail response
 
@@ -2336,9 +2432,43 @@ POST /pesantren-fasilitas
 PUT /pesantren-fasilitas/{fasilitas_id}
 ```
 
-**Request Body:** Same as create (all fields optional)
+**Request Body:** (all fields optional)
+```json
+{
+  "jumlah_kamar": 50,
+  "jumlah_ruang_kelas": 20,
+  "jumlah_masjid": 1,
+  "perpustakaan": true,
+  "laboratorium": true,
+  "ruang_komputer": true,
+  "koperasi": true,
+  "kantin": true,
+  "fasilitas_olahraga": "lapangan_futsal,basket",
+  "fasilitas_kesehatan": "klinik",
+  "fasilitas_mengajar": "projector,whiteboard",
+  "fasilitas_komunikasi": "internet,telepon",
+  "akses_transportasi": "angkutan_umum",
+  "jarak_ke_kota_km": 5.5,
+  "asrama": "layak",
+  "ruang_belajar": "cukup",
+  "internet": "stabil",
+  "fasilitas_transportasi": "angkutan_umum",
+  "akses_jalan": "aspal"
+}
+```
+
+**Valid Enum Values:**
+- `asrama`: layak, cukup, tidak_layak
+- `ruang_belajar`: layak, cukup, tidak_layak
+- `internet`: stabil, tidak_stabil, tidak_ada
+- `fasilitas_transportasi`: bus, angkutan_umum, kendaraan_pribadi, ojek
+- `akses_jalan`: aspal, cor_block, tanah, kerikil
 
 **Response (200 OK):** Same as detail response
+
+**Note:** `metode_pembayaran` is managed in `/pesantren-pendidikan` module.
+
+**Note:** Fields `fasilitas_mck` and `listrik` (sumber_listrik/kestabilan_listrik) are managed in `pesantren_fisik` module to avoid duplication.
 
 ### Delete Fasilitas Data
 ```
@@ -2361,15 +2491,19 @@ GET /pesantren-pendidikan/pesantren/{pesantren_id}
 {
   "id": "uuid",
   "pesantren_id": "uuid",
-  "jenjang_pendidikan": "SD,SMP,SMA",
+  "jenjang_pendidikan": "semua_ra_ma",
   "kurikulum": "terstandar",
-  "akreditasi": "A",
+  "akreditasi": "a",
   "jumlah_guru_tetap": 20,
   "jumlah_guru_tidak_tetap": 5,
   "guru_s1_keatas": 18,
+  "persen_guru_bersertifikat": 90,
+  "rasio_guru_santri": 1.2,
   "prestasi_akademik": "nasional",
   "prestasi_non_akademik": "regional",
+  "prestasi_santri": "nasional",
   "program_unggulan": "Tahfidz,Bahasa Arab",
+  "fasilitas_mengajar": "projector,whiteboard",
   "metode_pembayaran": "tunai,non_tunai",
   "biaya_bulanan_min": 200000,
   "biaya_bulanan_max": 500000
@@ -2388,9 +2522,47 @@ GET /pesantren-pendidikan/{pendidikan_id}
 POST /pesantren-pendidikan
 ```
 
-**Request Body:** Same as response above (all fields optional except pesantren_id)
+**Request Body:** (all fields optional except pesantren_id)
+```json
+{
+  "pesantren_id": "uuid",
+  "jenjang_pendidikan": "semua_ra_ma",
+  "kurikulum": "terstandar",
+  "akreditasi": "a",
+  "jumlah_guru_tetap": 20,
+  "jumlah_guru_tidak_tetap": 5,
+  "guru_s1_keatas": 18,
+  "persen_guru_bersertifikat": 90,
+  "rasio_guru_santri": 1.2,
+  "prestasi_akademik": "nasional",
+  "prestasi_non_akademik": "regional",
+  "prestasi_santri": "nasional",
+  "program_unggulan": "Tahfidz,Bahasa Arab",
+  "fasilitas_mengajar": "projector,whiteboard",
+  "metode_pembayaran": "tunai,non_tunai",
+  "biaya_bulanan_min": 200000,
+  "biaya_bulanan_max": 500000
+}
+```
 
 **Response (201 Created):** Same as detail response
+
+**Response (201 Created):** Same as detail response
+
+**Jenjang Pendidikan Options:**
+- `semua_ra_ma` - Semua Ada dari RA-MA
+- `pendidikan_dasar` - Pendidikan Dasar Saja (MI)
+- `dasar_menengah_pertama` - Pendidikan Dasar hingga Menengah Pertama (MI-MTs)
+- `dasar_menengah_atas` - Pendidikan Dasar - Menengah Atas (MI-MA)
+- `satu_jenjang` - Hanya satu jenjang Pendidikan
+
+**Valid Enum Values:**
+- `kurikulum`: "terstandar", "internal", "tidak_jelas"
+- `akreditasi`: "a", "b", "c", "belum" (lowercase only!)
+- `prestasi_santri`: "nasional", "regional", "tidak_ada" (NOT "baik"!)
+- `prestasi_akademik` & `prestasi_non_akademik`: Free text (recommended: "nasional", "regional", "tidak_ada")
+- `fasilitas_mengajar`: Free text, comma-separated (e.g., "projector,whiteboard")
+- `metode_pembayaran`: Free text, comma-separated (e.g., "tunai,non_tunai")
 
 **Note:** Only one pendidikan record per pesantren is allowed.
 
@@ -2399,7 +2571,27 @@ POST /pesantren-pendidikan
 PUT /pesantren-pendidikan/{pendidikan_id}
 ```
 
-**Request Body:** Same as create (all fields optional)
+**Request Body:** (all fields optional)
+```json
+{
+  "jenjang_pendidikan": "dasar_menengah_pertama",
+  "kurikulum": "terstandar",
+  "akreditasi": "a",
+  "jumlah_guru_tetap": 20,
+  "jumlah_guru_tidak_tetap": 5,
+  "guru_s1_keatas": 18,
+  "persen_guru_bersertifikat": 90,
+  "rasio_guru_santri": 1.2,
+  "prestasi_akademik": "nasional",
+  "prestasi_non_akademik": "regional",
+  "prestasi_santri": "nasional",
+  "program_unggulan": "Tahfidz,Bahasa Arab",
+  "fasilitas_mengajar": "projector,whiteboard",
+  "metode_pembayaran": "tunai,non_tunai",
+  "biaya_bulanan_min": 200000,
+  "biaya_bulanan_max": 500000
+}
+```
 
 **Response (200 OK):** Same as detail response
 
@@ -2413,6 +2605,15 @@ DELETE /pesantren-pendidikan/{pendidikan_id}
 ---
 
 ## Pesantren Scoring System
+
+**System Purpose:**
+Assesses the quality, facilities, and educational standards of pesantren (boarding schools). This is separate from Santri Scoring which assesses individual santri poverty levels.
+
+**Field Organization for Scoring:**
+- **Kelayakan Fisik**: Data from `/pesantren-fisik`
+- **Air & Sanitasi**: Data from `/pesantren-fisik` (sanitasi, sumber_air, kualitas_air_bersih, fasilitas_mck)
+- **Fasilitas Pendukung**: Data from `/pesantren-fisik` (listrik, akses_jalan) and `/pesantren-fasilitas` (fasilitas_transportasi)
+- **Mutu Pendidikan**: Data from `/pesantren-pendidikan` (jenjang_pendidikan, kurikulum, akreditasi, prestasi_santri)
 
 ### Calculate Pesantren Score
 Calculate and save quality score for a pesantren.
@@ -2439,16 +2640,22 @@ POST /api/pesantren-scoring/{pesantren_id}/calculate
 ```
 
 **Scoring Dimensions:**
-- **Kelayakan Fisik (40%)**: Status bangunan, kondisi, luas
-- **Air & Sanitasi (25%)**: Sumber air, kualitas, MCK
-- **Fasilitas Pendukung (20%)**: Ruang kelas, perpustakaan, olahraga
-- **Mutu Pendidikan (15%)**: Akreditasi, guru, prestasi
+- **Kelayakan Fisik (40%)**: Status bangunan, kondisi, luas, material bangunan (lantai, dinding, atap)
+- **Air & Sanitasi (25%)**: Sumber air, kualitas air, sanitasi (fasilitas MCK is managed in pesantren_fisik)
+- **Fasilitas Pendukung (20%)**: Listrik, fasilitas mengajar, komunikasi, transportasi, akses jalan
+- **Mutu Pendidikan (15%)**: Jenjang pendidikan, kurikulum, akreditasi, prestasi santri
+
+**Mutu Pendidikan Parameters:**
+- `jenjang_pendidikan`: Kelengkapan jenjang (semua_ra_ma: 100, dasar_menengah_atas: 90, dasar_menengah_pertama: 75, pendidikan_dasar: 60, satu_jenjang: 50)
+- `kurikulum`: Standardisasi kurikulum (terstandar: 100, internal: 75, tidak_jelas: 40)
+- `akreditasi`: Status akreditasi (a: 100, b: 80, c: 60, belum: 40)
+- `prestasi_santri`: Tingkat prestasi (nasional: 100, regional: 75, tidak_ada: 40)
 
 **Kategori Kelayakan:**
-- `sangat_layak`: Skor 80-100 (Excellent condition)
-- `layak`: Skor 60-79 (Good condition)
-- `cukup_layak`: Skor 40-59 (Fair condition)
-- `tidak_layak`: Skor 0-39 (Poor condition)
+- `sangat_layak`: Skor 85-100 (Excellent condition)
+- `layak`: Skor 70-84 (Good condition)
+- `cukup_layak`: Skor 55-69 (Fair condition)
+- `tidak_layak`: Skor 0-54 (Poor condition)
 
 ### Get Score by Pesantren ID
 ```
@@ -2570,21 +2777,35 @@ POST /api/pesantren-scoring/batch/calculate-all
    - `status_rumah`: "milik_sendiri", "kontrak", "menumpang"
    
 8. **Pesantren Enum Values**:
+
+   **Pesantren Pendidikan:**
+   - `jenjang_pendidikan`: "semua_ra_ma", "pendidikan_dasar", "dasar_menengah_pertama", "dasar_menengah_atas", "satu_jenjang"
+   - `kurikulum`: "terstandar", "internal", "tidak_jelas"
+   - `akreditasi`: "a", "b", "c", "belum"
+   - `prestasi_santri`: "nasional", "regional", "tidak_ada" (NOT "baik"!)
+
+   **Pesantren Fasilitas:**
+   - `asrama`: "layak", "cukup", "tidak_layak"
+   - `ruang_belajar`: "layak", "cukup", "tidak_layak"
+   - `internet`: "stabil", "tidak_stabil", "tidak_ada"
+   - `fasilitas_transportasi`: "bus", "angkutan_umum", "kendaraan_pribadi", "ojek"
+   - `akses_jalan`: "aspal", "cor_block", "tanah", "kerikil"
+
+   **Pesantren Fisik:**
    - `status_bangunan`: "milik_sendiri", "sewa", "pinjam", "hibah", "wakaf"
    - `kondisi_bangunan`: "permanen", "semi_permanen", "non_permanen"
+   - `sanitasi`: "layak", "cukup", "tidak_layak"
+   - `air_bersih`: "lancar", "terbatas", "tidak_tersedia"
    - `sumber_air`: "sumur", "PDAM", "sungai", "hujan", "berbagai_macam"
    - `kualitas_air_bersih`: "asin", "layak_minum", "berbau", "keruh"
    - `fasilitas_mck`: "lengkap", "kurang_lengkap", "cukup", "tidak_layak"
-   - `kestabilan_listrik`: "stabil", "tidak_stabil", "tidak_ada"
+   - `keamanan_bangunan`: "tinggi", "standar", "minim", "tidak_aman"
    - `jenis_lantai`: "keramik", "marmer", "kayu", "beton", "tanah"
    - `jenis_atap`: "genteng_tanah_liat", "metal", "seng", "upvc", "asbes", "ijuk"
    - `jenis_dinding`: "tembok", "kayu", "bambu", "anyaman", "papan"
    - `sumber_listrik`: "PLN", "genset", "listrik_tidak_ada", "tenaga_surya"
-   - `kurikulum`: "terstandar", "internal", "tidak_jelas"
-   - `akreditasi`: "A", "B", "C", "belum"
-   - `prestasi_akademik/non_akademik`: "nasional", "regional", "tidak_ada"
-   - `metode_pembayaran`: "tunai", "non_tunai", "campuran"
-   - `akses_jalan`: "aspal", "cor_block", "tanah", "kerikil"
+   - `daya_listrik_va`: "450", "900", "1300", "2200", "3500", "5500"
+   - `kestabilan_listrik`: "stabil", "tidak_stabil", "tidak_ada"
 
 9. **Pesantren Relationships**:
   - **Coordinates Extraction**: Both Santri detail and Pesantren detail expose `latitude` and `longitude` derived from geometry (POINT).

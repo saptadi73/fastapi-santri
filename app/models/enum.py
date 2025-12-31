@@ -36,15 +36,22 @@ class KestabilanEnum(str, PyEnum):
     tidak_stabil = "tidak_stabil"
     tidak_ada = "tidak_ada"
 
+class JenjangPendidikanEnum(str, PyEnum):
+    semua_ra_ma = "semua_ra_ma"  # Semua Ada dari RA-MA
+    pendidikan_dasar = "pendidikan_dasar"  # Pendidikan Dasar Saja (MI)
+    dasar_menengah_pertama = "dasar_menengah_pertama"  # MI-MTs
+    dasar_menengah_atas = "dasar_menengah_atas"  # MI-MA
+    satu_jenjang = "satu_jenjang"  # Hanya satu jenjang Pendidikan
+
 class KurikulumEnum(str, PyEnum):
     terstandar = "terstandar"
     internal = "internal"
     tidak_jelas = "tidak_jelas"
 
 class AkreditasiEnum(str, PyEnum):
-    A = "A"
-    B = "B"
-    C = "C"
+    a = "a"
+    b = "b"
+    c = "c"
     belum = "belum"
 
 class PrestasiEnum(str, PyEnum):

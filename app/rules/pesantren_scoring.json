@@ -114,16 +114,6 @@
             "cukup": 70,
             "tidak_layak": 30
           }
-        },
-        {
-          "key": "fasilitas_mck",
-          "enum": "FasilitasMCKEnum",
-          "mapping": {
-            "lengkap": 100,
-            "cukup": 75,
-            "kurang_lengkap": 50,
-            "tidak_layak": 25
-          }
         }
       ]
     },
@@ -196,6 +186,17 @@
       "weight": 0.15,
       "parameters": [
         {
+          "key": "jenjang_pendidikan",
+          "enum": "JenjangPendidikanEnum",
+          "mapping": {
+            "semua_ra_ma": 100,
+            "dasar_menengah_atas": 90,
+            "dasar_menengah_pertama": 75,
+            "pendidikan_dasar": 60,
+            "satu_jenjang": 50
+          }
+        },
+        {
           "key": "kurikulum",
           "enum": "KurikulumEnum",
           "mapping": {
@@ -208,9 +209,9 @@
           "key": "akreditasi",
           "enum": "AkreditasiEnum",
           "mapping": {
-            "A": 100,
-            "B": 80,
-            "C": 60,
+            "a": 100,
+            "b": 80,
+            "c": 60,
             "belum": 40
           }
         },
@@ -221,15 +222,6 @@
             "nasional": 100,
             "regional": 75,
             "tidak_ada": 40
-          }
-        },
-        {
-          "key": "metode_pembayaran",
-          "enum": "MetodePembayaranEnum",
-          "mapping": {
-            "non_tunai": 100,
-            "campuran": 75,
-            "tunai": 60
           }
         }
       ]

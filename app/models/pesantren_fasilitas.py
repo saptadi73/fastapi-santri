@@ -1,9 +1,14 @@
-from sqlalchemy import Enum, TIMESTAMP, func, ForeignKey
+from sqlalchemy import Enum, TIMESTAMP, func, ForeignKey, Integer, Boolean, Float, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 import uuid
 
 from app.models.base import UUIDBase
-from app.models.enum import KelayakanEnum, KetersediaanEnum, KestabilanEnum, FasilitasMCKEnum, FasilitasMengajarEnum, FasilitasKomunikasiEnum, FasilitasTransportasiEnum, AksesJalanEnum, MetodePembayaranEnum
+from app.models.enum import (
+    KelayakanEnum, 
+    KestabilanEnum, 
+    FasilitasTransportasiEnum, 
+    AksesJalanEnum
+)
 
 class PesantrenFasilitas(UUIDBase):
     __tablename__ = "pesantren_fasilitas"
@@ -14,41 +19,37 @@ class PesantrenFasilitas(UUIDBase):
         unique=True
     )
 
-    asrama = mapped_column(Enum(KelayakanEnum, name="kelayakan_enum"), nullable=False)
-    ruang_belajar = mapped_column(Enum(KelayakanEnum, name="kelayakan_enum"), nullable=False)
+    # Ruang dan kapasitas
+    jumlah_kamar: Mapped[int] = mapped_column(Integer, nullable=True)
+    jumlah_ruang_kelas: Mapped[int] = mapped_column(Integer, nullable=True)
+    jumlah_masjid: Mapped[int] = mapped_column(Integer, nullable=True)
 
-    perpustakaan = mapped_column(
-        Enum(KetersediaanEnum, name="ketersediaan_enum"), nullable=False
-    )
-    laboratorium = mapped_column(
-        Enum(KetersediaanEnum, name="ketersediaan_enum"), nullable=False
-    )
+    # Fasilitas utama (ketersediaan as boolean)
+    perpustakaan: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+    laboratorium: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+    ruang_komputer: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+    koperasi: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+    kantin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
 
-    listrik = mapped_column(Enum(KestabilanEnum, name="kestabilan_enum"), nullable=False)
-    internet = mapped_column(Enum(KestabilanEnum, name="kestabilan_enum"), nullable=False)
+    # Fasilitas spesifik (deskripsi)
+    fasilitas_olahraga = mapped_column(String, nullable=True)
+    fasilitas_kesehatan = mapped_column(String, nullable=True)
+    fasilitas_mengajar = mapped_column(String, nullable=True)
+    fasilitas_komunikasi = mapped_column(String, nullable=True)
+    akses_transportasi = mapped_column(String, nullable=True)
+    jarak_ke_kota_km: Mapped[float] = mapped_column(Float, nullable=True)
 
-    fasilitas_mck = mapped_column(
-        Enum(FasilitasMCKEnum, name="fasilitas_mck_enum"), nullable=False
-    )
+    # Infrastruktur (status/kondisi)
+    asrama = mapped_column(Enum(KelayakanEnum, name="kelayakan_enum"), nullable=True)
+    ruang_belajar = mapped_column(Enum(KelayakanEnum, name="kelayakan_enum"), nullable=True)
+    internet = mapped_column(Enum(KestabilanEnum, name="kestabilan_enum"), nullable=True)
 
-    fasilitas_mengajar = mapped_column(
-        Enum(FasilitasMengajarEnum, name="fasilitas_mengajar_enum"), nullable=False
-    )
-
-    fasilitas_komunikasi = mapped_column(
-        Enum(FasilitasKomunikasiEnum, name="fasilitas_komunikasi_enum"), nullable=False
-    )
-
+    # Enum-based fasilitas
     fasilitas_transportasi = mapped_column(
-        Enum(FasilitasTransportasiEnum, name="fasilitas_transportasi_enum"), nullable=False
+        Enum(FasilitasTransportasiEnum, name="fasilitas_transportasi_enum"), nullable=True
     )
-
     akses_jalan = mapped_column(
-        Enum(AksesJalanEnum, name="akses_jalan_enum"), nullable=False
-    )
-
-    metode_pembayaran = mapped_column(
-        Enum(MetodePembayaranEnum, name="metode_pembayaran_enum"), nullable=False
+        Enum(AksesJalanEnum, name="akses_jalan_enum"), nullable=True
     )
 
     created_at = mapped_column(TIMESTAMP, server_default=func.now())
