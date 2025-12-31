@@ -28,9 +28,13 @@ def get_service(db: Session = Depends(get_db)) -> ScoreService:
 @router.post("/{santri_id}/calculate", response_model=None)
 async def calculate_skor(santri_id: UUID, service: ScoreService = Depends(get_service)):
     try:
-        record = service.calculate_and_save(santri_id)
+        record, breakdown = service.calculate_and_save(santri_id)
+        # Convert to response schema with breakdown
+        response_data = SantriSkorResponse.model_validate(record)
+        response_dict = response_data.model_dump()
+        response_dict["breakdown"] = breakdown
         return success_response(
-            data=SantriSkorResponse.model_validate(record),
+            data=response_dict,
             message="Skor berhasil dihitung dan disimpan",
             status_code=201
         )
@@ -40,10 +44,16 @@ async def calculate_skor(santri_id: UUID, service: ScoreService = Depends(get_se
 
 @router.get("/santri/{santri_id}", response_model=None)
 async def get_skor_by_santri(santri_id: UUID, service: ScoreService = Depends(get_service)):
-    record = service.get_by_santri_id(santri_id)
-    if not record:
+    result = service.get_by_santri_id(santri_id)
+    if not result:
         return error_response("Skor tidak ditemukan", status_code=404, error_code="NOT_FOUND")
-    return success_response(SantriSkorResponse.model_validate(record))
+    
+    record, breakdown = result
+    # Convert to response schema with breakdown
+    response_data = SantriSkorResponse.model_validate(record)
+    response_dict = response_data.model_dump()
+    response_dict["breakdown"] = breakdown
+    return success_response(response_dict)
 
 
 @router.post("/bulk/calculate-asset", response_model=None)
@@ -65,7 +75,7 @@ async def bulk_calculate_asset_scores(
 
         for santri_id in payload.santri_ids:
             try:
-                record = service.calculate_and_save(santri_id, metode=payload.metode, version=payload.version)
+                record, _ = service.calculate_and_save(santri_id, metode=payload.metode, version=payload.version)
                 results.append({
                     "santri_id": str(santri_id),
                     "skor_total": record.skor_total,
@@ -108,7 +118,7 @@ async def batch_calculate_all(db: Session = Depends(get_db)):
         for santri in santris:
             try:
                 santri_id = UUID(str(santri.id)) if not isinstance(santri.id, UUID) else santri.id
-                record = service.calculate_and_save(santri_id)
+                record, _ = service.calculate_and_save(santri_id)
                 results.append({
                     "santri_id": str(santri.id),
                     "nama": santri.nama,

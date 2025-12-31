@@ -1832,8 +1832,23 @@ This system has two separate scoring modules:
 
 **Santri Scoring Focus:** Analyzes santri's economic situation, living conditions, assets, and support received.
 
+**Important Notes:**
+- ✅ Each scoring calculation is **independent** per santri/pesantren
+- ✅ Results are **saved to database** (tables: `santri_skor`, `pesantren_skor`)
+- ✅ Can be **re-calculated** anytime when data changes
+- ✅ Frontend can **display historical scores** from database
+- ✅ No need to recalculate all records when updating one santri/pesantren
+
+**Typical Workflow:**
+1. **After creating/updating** santri data → Call calculate API
+2. **Display scores** → Fetch from database via GET endpoints
+3. **Data changed?** → Re-calculate only that specific santri/pesantren
+4. **Bulk update?** → Use batch endpoints for efficiency
+
+---
+
 ### Calculate Single Santri Score
-Calculate poverty score for a single santri based on `scoring.json` config.
+Calculate poverty score for **ONE specific santri** and save to database. Use this after creating or updating a santri's data.
 
 ```
 POST /api/scoring/{santri_id}/calculate
@@ -1841,6 +1856,11 @@ POST /api/scoring/{santri_id}/calculate
 
 **Path Parameters:**
 - `santri_id` (UUID): Santri ID
+
+**Use Case:**
+- After creating a new santri
+- After updating santri's economic/health/asset data
+- When manually re-calculating scores
 
 **Response (201 Created):**
 ```json
@@ -1860,9 +1880,167 @@ POST /api/scoring/{santri_id}/calculate
     "kategori_kemiskinan": "Miskin",
     "metode": "pesantren_kemiskinan_v1",
     "version": "1.0.0",
-    "calculated_at": "2025-12-28T10:30:45.123Z"
+    "calculated_at": "2025-12-28T10:30:45.123Z",
+    "breakdown": {
+      "dimensi": [
+        {
+          "nama": "Ekonomi",
+          "skor": 25,
+          "skor_maks": 40,
+          "bobot": 30.0,
+          "kontribusi": 7.5,
+          "interpretasi": "Sedang",
+          "detail": [
+            {
+              "parameter": "Pendapatan Bulanan",
+              "nilai": "800000",
+              "skor": 20
+            },
+            {
+              "parameter": "Pekerjaan Orang Tua",
+              "nilai": "buruh",
+              "skor": 5
+            },
+            {
+              "parameter": "Pendidikan Orang Tua",
+              "nilai": "SD",
+              "skor": 3
+            }
+          ]
+        },
+        {
+          "nama": "Kondisi Rumah",
+          "skor": 15,
+          "skor_maks": 43,
+          "bobot": 25.0,
+          "kontribusi": 3.75,
+          "interpretasi": "Sedang",
+          "detail": [
+            {
+              "parameter": "Status Rumah",
+              "nilai": "menumpang",
+              "skor": 10
+            },
+            {
+              "parameter": "Jenis Lantai",
+              "nilai": "tanah",
+              "skor": 10
+            }
+          ]
+        },
+        {
+          "nama": "Kepemilikan Aset",
+          "skor": 10,
+          "skor_maks": 23,
+          "bobot": 15.0,
+          "kontribusi": 1.5,
+          "interpretasi": "Baik",
+          "detail": [
+            {
+              "parameter": "Motor",
+              "nilai": "0",
+              "skor": 5
+            },
+            {
+              "parameter": "HP",
+              "nilai": "1",
+              "skor": 0
+            }
+          ]
+        },
+        {
+          "nama": "Pembiayaan Pendidikan",
+          "skor": 8,
+          "skor_maks": 25,
+          "bobot": 15.0,
+          "kontribusi": 1.2,
+          "interpretasi": "Baik",
+          "detail": [
+            {
+              "parameter": "Sumber Biaya",
+              "nilai": "beasiswa",
+              "skor": 8
+            }
+          ]
+        },
+        {
+          "nama": "Kesehatan",
+          "skor": 5,
+          "skor_maks": 25,
+          "bobot": 10.0,
+          "kontribusi": 0.5,
+          "interpretasi": "Baik",
+          "detail": [
+            {
+              "parameter": "Status Gizi",
+              "nilai": "kurang",
+              "skor": 10
+            }
+          ]
+        },
+        {
+          "nama": "Penerima Bantuan Sosial",
+          "skor": 3,
+          "skor_maks": 17,
+          "bobot": 5.0,
+          "kontribusi": 0.15,
+          "interpretasi": "Baik",
+          "detail": [
+            {
+              "parameter": "PKH",
+              "nilai": "False",
+              "skor": 5
+            }
+          ]
+        }
+      ],
+      "skor_total": 66,
+      "kategori_kemiskinan": "Miskin",
+      "interpretasi_kategori": "Kondisi buruk, memerlukan bantuan"
+    }
   }
 }
+```
+
+**Breakdown Fields Explanation:**
+- `nama`: Nama dimensi (Ekonomi, Kondisi Rumah, dll)
+- `skor`: Skor dimensi (semakin tinggi = kondisi semakin buruk)
+- `skor_maks`: Skor maksimal dimensi
+- `bobot`: Bobot dimensi dalam persen (30% = 30.0)
+- `kontribusi`: Kontribusi ke total skor (skor × bobot ÷ 100)
+- `interpretasi`: Interpretasi kondisi dimensi:
+  - **Sangat Baik**: Skor 0 (tidak ada masalah)
+  - **Baik**: Skor ≤ 25% dari maks (sedikit masalah)
+  - **Sedang**: Skor ≤ 50% dari maks (beberapa masalah)
+  - **Buruk**: Skor ≤ 75% dari maks (banyak masalah)
+  - **Sangat Buruk**: Skor > 75% dari maks (masalah serius)
+- `detail`: Array parameter yang berkontribusi ke skor dimensi
+- `interpretasi_kategori`: Penjelasan kategori kemiskinan
+
+**Frontend Implementation Example:**
+```javascript
+// After updating santri data
+await axios.put(`/api/santri-pribadi/${santriId}`, updatedData);
+
+// Recalculate score for this specific santri only
+const scoreResponse = await axios.post(`/api/scoring/${santriId}/calculate`);
+console.log('New score:', scoreResponse.data.data.skor_total);
+
+// Display breakdown to user
+const breakdown = scoreResponse.data.data.breakdown;
+console.log('Kategori:', breakdown.kategori_kemiskinan);
+console.log('Interpretasi:', breakdown.interpretasi_kategori);
+
+// Show dimension details
+breakdown.dimensi.forEach(dim => {
+  console.log(`${dim.nama}: ${dim.skor}/${dim.skor_maks} (${dim.interpretasi})`);
+  console.log(`  Kontribusi: ${dim.kontribusi} poin`);
+  
+  // Show parameter details
+  dim.detail?.forEach(param => {
+    console.log(`  - ${param.parameter}: ${param.nilai} (skor: ${param.skor})`);
+  });
+});
 ```
 
 ### Batch Calculate All Santri
@@ -1981,7 +2159,7 @@ await axios.post('/api/scoring/bulk/calculate-asset', {
 ```
 
 ### Get Score by Santri ID
-Retrieve latest score for a santri.
+Retrieve **latest saved score** for a santri from database. Returns the most recent calculation.
 
 ```
 GET /api/scoring/santri/{santri_id}
@@ -1989,6 +2167,11 @@ GET /api/scoring/santri/{santri_id}
 
 **Path Parameters:**
 - `santri_id` (UUID): Santri ID
+
+**Use Case:**
+- Display score on santri detail page
+- Show score in santri list/table
+- Check current poverty status
 
 **Response (200 OK):**
 ```json
@@ -2008,6 +2191,54 @@ GET /api/scoring/santri/{santri_id}
     "kategori_kemiskinan": "Miskin",
     "metode": "pesantren_kemiskinan_v1",
     "version": "1.0.0",
+    "calculated_at": "2025-12-28T10:30:45.123Z",
+    "breakdown": {
+      "dimensi": [
+        {
+          "nama": "Ekonomi",
+          "skor": 25,
+          "skor_maks": 40,
+          "bobot": 30.0,
+          "kontribusi": 7.5,
+          "interpretasi": "Sedang",
+          "detail": [
+            {
+              "parameter": "Pendapatan Bulanan",
+              "nilai": "800000",
+              "skor": 20
+            },
+            {
+              "parameter": "Pekerjaan Orang Tua",
+              "nilai": "buruh",
+              "skor": 5
+            }
+          ]
+        }
+      ],
+      "skor_total": 66,
+      "kategori_kemiskinan": "Miskin",
+      "interpretasi_kategori": "Kondisi buruk, memerlukan bantuan"
+    }
+  }
+}
+```
+
+**Note:** Response includes `breakdown` field with detailed scoring information for each dimension.
+
+**Frontend Implementation Example:**
+```javascript
+// Display score on santri profile page
+const { data } = await axios.get(`/api/scoring/santri/${santriId}`);
+if (data.success) {
+  displayScore(data.data.skor_total);
+  displayCategory(data.data.kategori_kemiskinan);
+  displayBreakdown({
+    ekonomi: data.data.skor_ekonomi,
+    rumah: data.data.skor_rumah,
+    aset: data.data.skor_aset
+  });
+}
+```
     "calculated_at": "2025-12-28T10:30:45.123Z"
   }
 }
@@ -2609,17 +2840,49 @@ DELETE /pesantren-pendidikan/{pendidikan_id}
 **System Purpose:**
 Assesses the quality, facilities, and educational standards of pesantren (boarding schools). This is separate from Santri Scoring which assesses individual santri poverty levels.
 
+**Important Notes:**
+- ✅ Each pesantren score calculation is **independent** - calculating one pesantren doesn't affect others
+- ✅ Results are **saved to database** in the `pesantren_skor` table
+- ✅ Can be **re-calculated anytime** when pesantren data changes (fisik, fasilitas, or pendidikan)
+- ✅ Frontend can **display saved scores** from database without recalculating
+- ✅ No need to recalculate all pesantren when updating just one
+
+**Typical Workflow:**
+1. After creating/updating pesantren data → Call calculate API for **that specific pesantren only**
+2. Display scores → Fetch from database via GET endpoints (shows **latest saved calculation**)
+3. Data changed? → Re-calculate only **that one pesantren** without affecting others
+4. Need all scores updated? → Use batch endpoint (useful for initial setup or bulk updates)
+
 **Field Organization for Scoring:**
 - **Kelayakan Fisik**: Data from `/pesantren-fisik`
 - **Air & Sanitasi**: Data from `/pesantren-fisik` (sanitasi, sumber_air, kualitas_air_bersih, fasilitas_mck)
 - **Fasilitas Pendukung**: Data from `/pesantren-fisik` (listrik, akses_jalan) and `/pesantren-fasilitas` (fasilitas_transportasi)
 - **Mutu Pendidikan**: Data from `/pesantren-pendidikan` (jenjang_pendidikan, kurikulum, akreditasi, prestasi_santri)
 
-### Calculate Pesantren Score
-Calculate and save quality score for a pesantren.
+### Calculate Single Pesantren Score
+Calculate and save quality score for **one specific pesantren** only.
+
+**Use Case:**
+- After creating new pesantren data (fisik, fasilitas, pendidikan)
+- After updating any pesantren-related data
+- To refresh score when data corrections are made
+- Calculate independently without affecting other pesantren records
 
 ```
 POST /api/pesantren-scoring/{pesantren_id}/calculate
+```
+
+**Frontend Implementation Example:**
+```javascript
+// After updating pesantren fisik data
+await axios.put(`/api/pesantren-fisik/${fisikId}`, updatedFisikData);
+
+// Recalculate score for this specific pesantren only
+const scoreResponse = await axios.post(`/api/pesantren-scoring/${pesantrenId}/calculate`);
+if (scoreResponse.data.success) {
+  displayScore(scoreResponse.data.data.skor_total);
+  displayCategory(scoreResponse.data.data.kategori_kelayakan);
+}
 ```
 
 **Response (200 OK):**
@@ -2658,11 +2921,38 @@ POST /api/pesantren-scoring/{pesantren_id}/calculate
 - `tidak_layak`: Skor 0-54 (Poor condition)
 
 ### Get Score by Pesantren ID
+Retrieve **latest saved score** for a pesantren from database (no calculation performed).
+
+**Use Case:**
+- Display score on pesantren detail page
+- Show scores in pesantren list/table
+- Check facility quality status
+- Compare pesantren scores
+
 ```
 GET /api/pesantren-scoring/pesantren/{pesantren_id}
 ```
 
 **Response (200 OK):** Same as calculate response
+
+**Frontend Implementation Example:**
+```javascript
+// Display pesantren score on detail page
+const { data } = await axios.get(`/api/pesantren-scoring/pesantren/${pesantrenId}`);
+
+if (data.success) {
+  displayScore(data.data.skor_total);
+  displayCategory(data.data.kategori_kelayakan);
+  
+  // Show detailed breakdown
+  displayBreakdown({
+    fisik: data.data.skor_kelayakan_fisik,
+    airSanitasi: data.data.skor_air_sanitasi,
+    fasilitas: data.data.skor_fasilitas_pendukung,
+    pendidikan: data.data.skor_mutu_pendidikan
+  });
+}
+```
 
 ### Get Score by Score ID
 ```
@@ -2696,6 +2986,308 @@ POST /api/pesantren-scoring/batch/calculate-all
       "error": "Missing required data"
     }
   ]
+}
+```
+
+---
+
+## Santri Map GIS
+
+**Purpose:** Specialized endpoints for GIS mapping of santri locations. This table is automatically populated/updated when santri scoring is calculated.
+
+**Key Features:**
+- ✅ Auto-updated when santri score is calculated or recalculated
+- ✅ Returns GeoJSON format for map visualization
+- ✅ Supports spatial queries (bounding box)
+- ✅ Filter by poverty category or pesantren
+
+### Get Santri GeoJSON
+Get all santri as GeoJSON FeatureCollection for map display.
+
+```
+GET /api/santri-map/geojson?kategori=Miskin&pesantren_id={uuid}&limit=1000
+```
+
+**Query Parameters:**
+- `kategori` (optional): Filter by kategori_kemiskinan (Sangat Miskin, Miskin, Rentan, Tidak Miskin)
+- `pesantren_id` (optional, UUID): Filter by pesantren
+- `limit` (default: 1000, max: 5000): Maximum records to return
+
+**Response (200 OK):** GeoJSON FeatureCollection
+```json
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [108.123, -7.456]
+      },
+      "properties": {
+        "id": "uuid",
+        "santri_id": "uuid",
+        "nama": "Ahmad Syarif",
+        "skor_terakhir": 75,
+        "kategori_kemiskinan": "Miskin",
+        "pesantren_id": "uuid"
+      }
+    }
+  ],
+  "total": 150
+}
+```
+
+**Frontend Implementation (Leaflet/Mapbox):**
+```javascript
+// Fetch santri locations
+const response = await axios.get('/api/santri-map/geojson', {
+  params: { kategori: 'Miskin', limit: 500 }
+});
+
+// Add to map (Leaflet example)
+L.geoJSON(response.data, {
+  pointToLayer: (feature, latlng) => {
+    const props = feature.properties;
+    return L.circleMarker(latlng, {
+      radius: 8,
+      fillColor: getColorByCategory(props.kategori_kemiskinan),
+      color: '#fff',
+      weight: 1,
+      opacity: 1,
+      fillOpacity: 0.8
+    });
+  },
+  onEachFeature: (feature, layer) => {
+    const props = feature.properties;
+    layer.bindPopup(`
+      <strong>${props.nama}</strong><br>
+      Skor: ${props.skor_terakhir}<br>
+      Kategori: ${props.kategori_kemiskinan}
+    `);
+  }
+}).addTo(map);
+```
+
+### Get Santri by Bounding Box
+Get santri within map viewport (bounding box) for optimized loading.
+
+```
+GET /api/santri-map/bbox?min_lon=106.8&min_lat=-6.3&max_lon=106.9&max_lat=-6.2&kategori=Miskin
+```
+
+**Query Parameters:**
+- `min_lon` (required): Minimum longitude
+- `min_lat` (required): Minimum latitude
+- `max_lon` (required): Maximum longitude
+- `max_lat` (required): Maximum latitude
+- `kategori` (optional): Filter by kategori_kemiskinan
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Found 25 santri",
+  "data": [
+    {
+      "id": "uuid",
+      "santri_id": "uuid",
+      "nama": "Ahmad Syarif",
+      "skor_terakhir": 75,
+      "kategori_kemiskinan": "Miskin",
+      "latitude": -7.456,
+      "longitude": 108.123
+    }
+  ]
+}
+```
+
+**Frontend Implementation (on map move):**
+```javascript
+map.on('moveend', async () => {
+  const bounds = map.getBounds();
+  const response = await axios.get('/api/santri-map/bbox', {
+    params: {
+      min_lon: bounds.getWest(),
+      min_lat: bounds.getSouth(),
+      max_lon: bounds.getEast(),
+      max_lat: bounds.getNorth()
+    }
+  });
+  
+  // Update markers with visible santri only
+  updateMarkers(response.data.data);
+});
+```
+
+### Get Santri Map Statistics
+Get statistics about santri map data.
+
+```
+GET /api/santri-map/statistics
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Statistics retrieved successfully",
+  "data": {
+    "total_santri": 500,
+    "with_location": 450,
+    "without_location": 50,
+    "by_category": {
+      "Sangat Miskin": 50,
+      "Miskin": 120,
+      "Rentan": 180,
+      "Tidak Miskin": 100
+    }
+  }
+}
+```
+
+---
+
+## Pesantren Map GIS
+
+**Purpose:** Specialized endpoints for GIS mapping of pesantren locations. This table is automatically populated/updated when pesantren scoring is calculated.
+
+**Key Features:**
+- ✅ Auto-updated when pesantren score is calculated or recalculated
+- ✅ Returns GeoJSON format for map visualization
+- ✅ Supports spatial queries (bounding box)
+- ✅ Filter by quality category or region
+
+### Get Pesantren GeoJSON
+Get all pesantren as GeoJSON FeatureCollection for map display.
+
+```
+GET /api/pesantren-map/geojson?kategori=layak&provinsi=Jawa%20Barat&kabupaten=Tasikmalaya&limit=1000
+```
+
+**Query Parameters:**
+- `kategori` (optional): Filter by kategori_kelayakan (sangat_layak, layak, cukup_layak, tidak_layak)
+- `provinsi` (optional): Filter by provinsi
+- `kabupaten` (optional): Filter by kabupaten
+- `limit` (default: 1000, max: 5000): Maximum records to return
+
+**Response (200 OK):** GeoJSON FeatureCollection
+```json
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [108.123, -7.456]
+      },
+      "properties": {
+        "id": "uuid",
+        "pesantren_id": "uuid",
+        "nama": "Pondok Pesantren Al-Ikhlas",
+        "nsp": "12345678",
+        "skor_terakhir": 85,
+        "kategori_kelayakan": "sangat_layak",
+        "kabupaten": "Tasikmalaya",
+        "provinsi": "Jawa Barat",
+        "jumlah_santri": 500
+      }
+    }
+  ],
+  "total": 45
+}
+```
+
+**Frontend Implementation (Leaflet/Mapbox):**
+```javascript
+// Fetch pesantren locations
+const response = await axios.get('/api/pesantren-map/geojson', {
+  params: { provinsi: 'Jawa Barat', limit: 100 }
+});
+
+// Add to map
+L.geoJSON(response.data, {
+  pointToLayer: (feature, latlng) => {
+    const props = feature.properties;
+    return L.marker(latlng, {
+      icon: getPesantrenIcon(props.kategori_kelayakan)
+    });
+  },
+  onEachFeature: (feature, layer) => {
+    const props = feature.properties;
+    layer.bindPopup(`
+      <strong>${props.nama}</strong><br>
+      NSP: ${props.nsp}<br>
+      Skor: ${props.skor_terakhir}<br>
+      Kategori: ${props.kategori_kelayakan}<br>
+      Santri: ${props.jumlah_santri} orang<br>
+      ${props.kabupaten}, ${props.provinsi}
+    `);
+  }
+}).addTo(map);
+```
+
+### Get Pesantren by Bounding Box
+Get pesantren within map viewport (bounding box) for optimized loading.
+
+```
+GET /api/pesantren-map/bbox?min_lon=106.8&min_lat=-6.3&max_lon=106.9&max_lat=-6.2&kategori=layak
+```
+
+**Query Parameters:**
+- `min_lon` (required): Minimum longitude
+- `min_lat` (required): Minimum latitude
+- `max_lon` (required): Maximum longitude
+- `max_lat` (required): Maximum latitude
+- `kategori` (optional): Filter by kategori_kelayakan
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Found 12 pesantren",
+  "data": [
+    {
+      "id": "uuid",
+      "pesantren_id": "uuid",
+      "nama": "Pondok Pesantren Al-Ikhlas",
+      "nsp": "12345678",
+      "skor_terakhir": 85,
+      "kategori_kelayakan": "sangat_layak",
+      "kabupaten": "Tasikmalaya",
+      "provinsi": "Jawa Barat",
+      "jumlah_santri": 500,
+      "latitude": -7.456,
+      "longitude": 108.123
+    }
+  ]
+}
+```
+
+### Get Pesantren Map Statistics
+Get statistics about pesantren map data.
+
+```
+GET /api/pesantren-map/statistics
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Statistics retrieved successfully",
+  "data": {
+    "total_pesantren": 150,
+    "with_location": 145,
+    "without_location": 5,
+    "by_category": {
+      "sangat_layak": 45,
+      "layak": 60,
+      "cukup_layak": 30,
+      "tidak_layak": 10
+    }
+  }
 }
 ```
 

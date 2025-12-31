@@ -11,12 +11,26 @@ from app.routes.santri_pribadi_alias_routes import router as santri_pribadi_alia
 
 # Import models to ensure SQLAlchemy can find them
 from app.santri.models import Santri  # noqa: F401
+from app.models.pondok_pesantren import PondokPesantren  # noqa: F401
 from app.models.pesantren_fisik import PesantrenFisik  # noqa: F401
 from app.models.pesantren_fasilitas import PesantrenFasilitas  # noqa: F401
 from app.models.pesantren_pendidikan import PesantrenPendidikan  # noqa: F401
 from app.models.santri_pribadi import SantriPribadi  # noqa: F401
+from app.models.santri_orangtua import SantriOrangtua  # noqa: F401
+from app.models.santri_rumah import SantriRumah  # noqa: F401
+from app.models.santri_asset import SantriAsset  # noqa: F401
+from app.models.santri_bansos import SantriBansos  # noqa: F401
+from app.models.santri_kesehatan import SantriKesehatan  # noqa: F401
+from app.models.santri_pembiayaan import SantriPembiayaan  # noqa: F401
+from app.models.santri_skor import SantriSkor  # noqa: F401
 from app.models.pesantren_skor import PesantrenSkor  # noqa: F401
 from app.models.foto_pesantren import FotoPesantren  # noqa: F401
+from app.models.foto_orangtua import FotoOrangtua  # noqa: F401
+from app.models.foto_rumah import FotoRumah  # noqa: F401
+from app.models.foto_santri import FotoSantri  # noqa: F401
+from app.models.foto_asset import FotoAsset  # noqa: F401
+from app.models.santri_map import SantriMap  # noqa: F401
+from app.models.pesantren_map import PesantrenMap  # noqa: F401
 from app.routes.santri_orangtua_routes import router as santri_orangtua_router
 from app.routes.santri_rumah_routes import router as santri_rumah_router
 from app.routes.santri_asset_routes import router as santri_asset_router
@@ -29,6 +43,9 @@ from app.routes.pesantren_fisik_routes import router as pesantren_fisik_router
 from app.routes.pesantren_fasilitas_routes import router as pesantren_fasilitas_router
 from app.routes.pesantren_pendidikan_routes import router as pesantren_pendidikan_router
 from app.routes.pesantren_score_routes import router as pesantren_score_router
+from app.routes.santri_map_routes import router as santri_map_router
+from app.routes.pesantren_map_routes import router as pesantren_map_router
+from app.routes.gis_routes import router as gis_router
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -72,8 +89,11 @@ app.include_router(score_router)
 app.include_router(pondok_pesantren_router)
 app.include_router(pesantren_fisik_router)
 app.include_router(pesantren_fasilitas_router)
+app.include_router(santri_map_router)
+app.include_router(pesantren_map_router)
 app.include_router(pesantren_pendidikan_router)
 app.include_router(pesantren_score_router)
+app.include_router(gis_router)
 
 @app.get("/")
 def root():

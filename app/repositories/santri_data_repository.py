@@ -57,8 +57,12 @@ class SantriDataRepository:
             ot = self.db.query(SantriOrangtua).filter(SantriOrangtua.santri_id == santri_id).first()
             if not ot:
                 return None
-            if kode == "penghasilan_bulanan":
+            if kode == "penghasilan_bulanan" or kode == "pendapatan_bulanan":
                 return getattr(ot, "pendapatan_bulanan", None)
+            if kode == "pekerjaan":
+                return getattr(ot, "pekerjaan", None)
+            if kode == "pendidikan":
+                return getattr(ot, "pendidikan", None)
             if kode == "jumlah_tanggungan":
                 # Not available; default to 0 (can be refined later)
                 return 0
@@ -77,8 +81,18 @@ class SantriDataRepository:
             r = self.db.query(SantriRumah).filter(SantriRumah.santri_id == santri_id).first()
             if not r:
                 return None
-            if kode == "status_kepemilikan":
+            if kode == "status_kepemilikan" or kode == "status_rumah":
                 return getattr(r, "status_rumah", None)
+            if kode == "jenis_lantai":
+                return getattr(r, "jenis_lantai", None)
+            if kode == "jenis_dinding":
+                return getattr(r, "jenis_dinding", None)
+            if kode == "jenis_atap":
+                return getattr(r, "jenis_atap", None)
+            if kode == "akses_air_bersih":
+                return getattr(r, "akses_air_bersih", None)
+            if kode == "daya_listrik_va":
+                return getattr(r, "daya_listrik_va", None)
             if kode == "luas_per_orang":
                 # No explicit fields; default to None (no score)
                 return None

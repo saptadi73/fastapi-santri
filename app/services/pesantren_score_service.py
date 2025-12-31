@@ -9,6 +9,7 @@ from fastapi import HTTPException
 from app.repositories.pesantren_data_repository import PesantrenDataRepository
 from app.rules.pesantren_scoring_rules import calculate_pesantren_scores_from_config
 from app.models.pesantren_skor import PesantrenSkor
+from app.services.pesantren_map_service import PesantrenMapService
 
 
 class PesantrenScoreService:
@@ -69,6 +70,14 @@ class PesantrenScoreService:
             self.db.execute(stmt)
             self.db.commit()
             
+            # AUTO-UPDATE PESANTREN MAP for GIS (with error handling)
+            try:
+                map_service = PesantrenMapService(self.db)
+                map_service.upsert_from_scoring(pesantren_id, total, kategori)
+            except Exception as map_error:
+                # Log error but don't fail the scoring operation
+                print(f"Warning: Failed to update pesantren_map: {map_error}")
+            
             # Refresh and return
             existing = (
                 self.db.query(PesantrenSkor)
@@ -92,6 +101,15 @@ class PesantrenScoreService:
             self.db.add(record)
             self.db.commit()
             self.db.refresh(record)
+            
+            # AUTO-UPDATE PESANTREN MAP for GIS (with error handling)
+            try:
+                map_service = PesantrenMapService(self.db)
+                map_service.upsert_from_scoring(pesantren_id, total, kategori)
+            except Exception as map_error:
+                # Log error but don't fail the scoring operation
+                print(f"Warning: Failed to update pesantren_map: {map_error}")
+            
             return record
     
     def get_by_pesantren_id(self, pesantren_id: UUID) -> Optional[PesantrenSkor]:

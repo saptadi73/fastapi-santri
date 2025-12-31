@@ -160,10 +160,10 @@ def _apply_rule(op: str, value: Any, target: Any) -> bool:
     return False
 
 
-def calculate_scores_from_config(repo: SantriDataRepository, santri_id: UUID) -> Tuple[Dict[str, int], int, str, str, str]:
+def calculate_scores_from_config(repo: SantriDataRepository, santri_id: UUID) -> Tuple[Dict[str, int], int, str, str, str, Dict[str, Any]]:
     """Compute scores using scoring.json config via repository param values.
 
-    Returns per-component scores, total (0-100), kategori label, metode, version.
+    Returns per-component scores, total (0-100), kategori label, metode, version, and breakdown details.
     """
     cfg = load_scoring_config()
     meta = cfg.get("metadata", {})
@@ -174,6 +174,15 @@ def calculate_scores_from_config(repo: SantriDataRepository, santri_id: UUID) ->
     dimensi = cfg.get("dimensi", {})
     per_component: Dict[str, int] = {}
     total_score_float = 0.0
+    breakdown_dimensi = []
+
+    # Interpretasi mapping untuk kategori
+    kategori_interpretasi = {
+        "Sangat Miskin": "Kondisi sangat buruk, memerlukan bantuan segera",
+        "Miskin": "Kondisi buruk, memerlukan bantuan",
+        "Rentan": "Kondisi sedang, rentan jatuh miskin",
+        "Tidak Miskin": "Kondisi baik, tidak memerlukan bantuan"
+    }
 
     for dim_key, dim_conf in dimensi.items():
         bobot = float(dim_conf.get("bobot", 0))
@@ -181,26 +190,79 @@ def calculate_scores_from_config(repo: SantriDataRepository, santri_id: UUID) ->
         params = dim_conf.get("parameters", [])
 
         raw_dim = 0
+        detail_params = []
+        
         for p in params:
             kode = p.get("kode")
             sumber = p.get("sumber")
             rules = p.get("rules", [])
+            label = p.get("label", kode)
+            
             if not kode or not sumber:
                 continue
+                
             val = repo.get_param_value(santri_id, sumber, kode)
+            skor_param = 0
+            
             for r in rules:
                 op = r.get("operator")
                 rv = r.get("value")
                 skor = int(r.get("skor", 0))
                 if op and _apply_rule(op, rv, val):
+                    skor_param = skor
                     raw_dim += skor
+                    detail_params.append({
+                        "parameter": label,
+                        "nilai": str(val) if val is not None else "Tidak ada data",
+                        "skor": skor_param
+                    })
                     break  # first matching rule applies
+            
+            # Jika tidak ada rule yang match, tetap catat nilainya
+            if skor_param == 0 and val is not None:
+                detail_params.append({
+                    "parameter": label,
+                    "nilai": str(val),
+                    "skor": 0
+                })
 
         raw_dim = min(raw_dim, skor_maks)
         # Dimension weighted contribution
         contrib = bobot * raw_dim
         total_score_float += contrib
         per_component[f"skor_{dim_key}"] = int(round(raw_dim))
+        
+        # Interpretasi dimensi berdasarkan skor
+        if raw_dim == 0:
+            interpretasi = "Sangat Baik"
+        elif raw_dim <= skor_maks * 0.25:
+            interpretasi = "Baik"
+        elif raw_dim <= skor_maks * 0.5:
+            interpretasi = "Sedang"
+        elif raw_dim <= skor_maks * 0.75:
+            interpretasi = "Buruk"
+        else:
+            interpretasi = "Sangat Buruk"
+        
+        # Nama dimensi yang lebih friendly
+        nama_dimensi_map = {
+            "ekonomi": "Ekonomi",
+            "rumah": "Kondisi Rumah",
+            "aset": "Kepemilikan Aset",
+            "pembiayaan": "Pembiayaan Pendidikan",
+            "kesehatan": "Kesehatan",
+            "bansos": "Penerima Bantuan Sosial"
+        }
+        
+        breakdown_dimensi.append({
+            "nama": nama_dimensi_map.get(dim_key, dim_key.title()),
+            "skor": int(round(raw_dim)),
+            "skor_maks": skor_maks,
+            "bobot": bobot * 100,  # Convert to percentage
+            "kontribusi": round(contrib, 2),
+            "interpretasi": interpretasi,
+            "detail": detail_params if detail_params else None
+        })
 
     # Normalise to total_max if needed: current design assumes skor_maks weighted sum already in 0-100 scale
     total_int = int(round(total_score_float))
@@ -214,5 +276,12 @@ def calculate_scores_from_config(repo: SantriDataRepository, santri_id: UUID) ->
             break
     if not kategori:
         kategori = "Tidak Miskin"
+    
+    breakdown = {
+        "dimensi": breakdown_dimensi,
+        "skor_total": total_int,
+        "kategori_kemiskinan": kategori,
+        "interpretasi_kategori": kategori_interpretasi.get(kategori, "")
+    }
 
-    return per_component, total_int, kategori, metode, version
+    return per_component, total_int, kategori, metode, version, breakdown
