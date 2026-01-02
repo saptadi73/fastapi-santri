@@ -71,6 +71,80 @@ def santri_points(
     except Exception as exc:  # pragma: no cover
         raise HTTPException(status_code=500, detail=f"GIS query failed: {exc}")
 
+
+@router.get("/pesantren-points")
+def pesantren_points(
+    provinsi: str | None = None,
+    kabupaten: str | None = None,
+    kecamatan: str | None = None,
+    db: Session = Depends(get_db),
+):
+    where = ["p.geom IS NOT NULL"]
+    joins = []
+    params: dict[str, str] = {}
+
+    if provinsi:
+        joins.append(f"JOIN {_tbl(PROV_TABLE)} prov ON ST_Contains(prov.geom, p.geom)")
+        where.append("prov.name_1 = :provinsi")
+        params["provinsi"] = provinsi
+
+    if kabupaten:
+        joins.append(f"JOIN {_tbl(KAB_TABLE)} k ON ST_Contains(k.geom, p.geom)")
+        where.append("k.name_2 = :kabupaten")
+        params["kabupaten"] = kabupaten
+
+    if kecamatan:
+        joins.append(f"JOIN {_tbl(KEC_TABLE)} kc ON ST_Contains(kc.geom, p.geom)")
+        where.append("kc.name_3 = :kecamatan")
+        params["kecamatan"] = kecamatan
+
+    sql = f"""
+    SELECT jsonb_build_object(
+      'type','FeatureCollection',
+      'features', COALESCE(
+        jsonb_agg(
+          jsonb_build_object(
+            'type','Feature',
+            'geometry', ST_AsGeoJSON(p.geom)::jsonb,
+            'properties', jsonb_build_object(
+              'id', p.id,
+              'nama', p.nama,
+              'nsp', p.nsp,
+              'provinsi', p.provinsi,
+              'kabupaten', p.kabupaten,
+              'kecamatan', p.kecamatan
+            )
+          )
+        ), '[]'::jsonb
+      )
+    )
+    FROM pondok_pesantren p
+    {' '.join(joins)}
+    WHERE {' AND '.join(where)};
+    """
+
+    try:
+        return db.execute(text(sql), params).scalar()
+    except Exception as exc:  # pragma: no cover
+        raise HTTPException(status_code=500, detail=f"GIS query failed: {exc}")
+
+@router.get("/pesantren-heatmap")
+def pesantren_heatmap(db: Session = Depends(get_db)):
+    sql = """
+    SELECT
+      ST_Y(geom) AS lat,
+      ST_X(geom) AS lng,
+      1 AS weight
+    FROM pondok_pesantren
+    WHERE geom IS NOT NULL;
+    """
+    rows = db.execute(text(sql)).fetchall()
+
+    return [
+        {"lat": r.lat, "lng": r.lng, "weight": r.weight}
+        for r in rows
+    ]
+
 @router.get("/heatmap")
 def heatmap(db: Session = Depends(get_db)):
     sql = """
