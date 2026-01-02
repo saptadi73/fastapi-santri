@@ -102,19 +102,26 @@ class SantriDataRepository:
                 # Derive: akses_air_bersih "layak" -> True; else False
                 return (getattr(r, "akses_air_bersih", None) == "layak")
 
-        if sumber == "santri_aset":
+        if sumber in ("santri_aset", "santri_asset"):
             assets = self.get_assets(santri_id)
             if kode == "motor":
                 return sum(a.jumlah or 0 for a in assets if getattr(a, "jenis_aset", None) == "motor")
             if kode == "mobil":
                 return sum(a.jumlah or 0 for a in assets if getattr(a, "jenis_aset", None) == "mobil")
+            if kode == "sepeda":
+                return sum(a.jumlah or 0 for a in assets if getattr(a, "jenis_aset", None) == "sepeda")
             if kode == "lahan":
-                # We do not store area; derive presence as 0 or 0.5
-                has_lahan = any(
-                    str(getattr(a, "jenis_aset", "") or "").lower() == "lahan"
-                    for a in assets
-                )
-                return 0.0 if not has_lahan else 0.5
+                return sum(a.jumlah or 0 for a in assets if getattr(a, "jenis_aset", None) == "lahan")
+            if kode == "hp":
+                return sum(a.jumlah or 0 for a in assets if getattr(a, "jenis_aset", None) == "hp")
+            if kode == "ternak":
+                return sum(a.jumlah or 0 for a in assets if getattr(a, "jenis_aset", None) == "ternak")
+            if kode == "laptop":
+                return sum(a.jumlah or 0 for a in assets if getattr(a, "jenis_aset", None) == "laptop")
+            if kode == "alat_kerja":
+                return sum(a.jumlah or 0 for a in assets if getattr(a, "jenis_aset", None) == "alat_kerja")
+            if kode == "lainnya":
+                return sum(a.jumlah or 0 for a in assets if getattr(a, "jenis_aset", None) == "lainnya")
 
         if sumber == "santri_pembiayaan":
             p = self.db.query(SantriPembiayaan).filter(SantriPembiayaan.santri_id == santri_id).first()
@@ -122,6 +129,10 @@ class SantriDataRepository:
                 return None
             if kode == "sumber_biaya":
                 return getattr(p, "sumber_biaya", None)
+            if kode == "status_pembayaran":
+                return getattr(p, "status_pembayaran", None)
+            if kode == "tunggakan_bulan":
+                return getattr(p, "tunggakan_bulan", None)
             if kode == "tunggakan":
                 return (getattr(p, "tunggakan_bulan", 0) or 0) > 0
 
@@ -129,6 +140,12 @@ class SantriDataRepository:
             k = self.db.query(SantriKesehatan).filter(SantriKesehatan.santri_id == santri_id).first()
             if not k:
                 return None
+            if kode == "status_gizi":
+                return getattr(k, "status_gizi", None)
+            if kode == "riwayat_penyakit":
+                return getattr(k, "riwayat_penyakit", None)
+            if kode == "kebutuhan_khusus":
+                return getattr(k, "kebutuhan_khusus", None)
             if kode == "penyakit_kronis":
                 # Derive from riwayat_penyakit presence
                 rp = getattr(k, "riwayat_penyakit", "") or ""
@@ -141,6 +158,9 @@ class SantriDataRepository:
             b = self.db.query(SantriBansos).filter(SantriBansos.santri_id == santri_id).first()
             if not b:
                 return None
+            # Direct flags for each bantuan program
+            if kode in {"pkh", "bpnt", "pip", "kis_pbi", "blt_desa"}:
+                return bool(getattr(b, kode, False))
             if kode == "pernah_menerima":
                 flags = [b.pkh, b.bpnt, b.pip, b.kis_pbi, b.blt_desa]
                 return any(bool(f) for f in flags)

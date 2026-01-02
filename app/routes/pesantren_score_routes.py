@@ -25,9 +25,12 @@ async def calculate_skor(
 ):
     """Calculate and save scoring for a pesantren."""
     try:
-        record = service.calculate_and_save(pesantren_id)
+        record, breakdown = service.calculate_and_save(pesantren_id)
         return success_response(
-            data=PesantrenSkorResponse.model_validate(record),
+            data={
+                "skor": PesantrenSkorResponse.model_validate(record),
+                "breakdown": breakdown
+            },
             message="Skor pesantren berhasil dihitung dan disimpan",
             status_code=201
         )
@@ -40,15 +43,19 @@ async def get_skor_by_pesantren(
     pesantren_id: UUID,
     service: PesantrenScoreService = Depends(get_service)
 ):
-    """Get scoring by pesantren ID."""
-    record = service.get_by_pesantren_id(pesantren_id)
-    if not record:
+    """Get scoring by pesantren ID with detailed breakdown."""
+    result = service.get_by_pesantren_id(pesantren_id)
+    if not result:
         return error_response(
             "Skor tidak ditemukan",
             status_code=404,
             error_code="NOT_FOUND"
         )
-    return success_response(PesantrenSkorResponse.model_validate(record))
+    record, breakdown = result
+    return success_response({
+        "skor": PesantrenSkorResponse.model_validate(record),
+        "breakdown": breakdown
+    })
 
 
 @router.get("/{skor_id}", response_model=None)
@@ -84,7 +91,7 @@ async def batch_calculate_all(db: Session = Depends(get_db)):
                     if not isinstance(pesantren.id, UUID)
                     else pesantren.id
                 )
-                record = service.calculate_and_save(pesantren_id)
+                record, breakdown = service.calculate_and_save(pesantren_id)
                 results.append({
                     "pesantren_id": str(pesantren.id),
                     "nama": pesantren.nama,

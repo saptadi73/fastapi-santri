@@ -47,7 +47,11 @@ class SantriMap(UUIDBase):
     
     # Relationships
     santri = relationship("SantriPribadi", foreign_keys=[santri_id])
-    pesantren = relationship("PondokPesantren", foreign_keys=[pesantren_id])
+    pesantren = relationship(
+        "PondokPesantren",
+        foreign_keys=[pesantren_id],
+        back_populates="santri_gis",
+    )
     
     # Spatial index for geometry column
     __table_args__ = (

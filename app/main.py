@@ -46,11 +46,12 @@ from app.routes.pesantren_score_routes import router as pesantren_score_router
 from app.routes.santri_map_routes import router as santri_map_router
 from app.routes.pesantren_map_routes import router as pesantren_map_router
 from app.routes.gis_routes import router as gis_router
+from app.routes.nl2sql_routes import router as nl2sql_router
 from fastapi.middleware.cors import CORSMiddleware
 
 
 
-app = FastAPI(title=settings.APP_NAME)
+app = FastAPI(title=settings.app_name)
 
 # CORS Configuration - must be added before routes
 app.add_middleware(
@@ -94,6 +95,7 @@ app.include_router(pesantren_map_router)
 app.include_router(pesantren_pendidikan_router)
 app.include_router(pesantren_score_router)
 app.include_router(gis_router)
+app.include_router(nl2sql_router)
 
 @app.get("/")
 def root():

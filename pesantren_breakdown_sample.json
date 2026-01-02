@@ -1,0 +1,147 @@
+{
+  "dimensi": [
+    {
+      "nama": "Kelayakan Fisik Bangunan",
+      "skor": 98,
+      "skor_maks": 100,
+      "bobot": 40.0,
+      "kontribusi": 39.2,
+      "interpretasi": "Sangat Baik",
+      "detail": [
+        {
+          "parameter": "Kondisi Bangunan",
+          "nilai": "Kondisibangunanenum.Permanen",
+          "skor": 100
+        },
+        {
+          "parameter": "Status Bangunan",
+          "nilai": "Statusbangunanenum.Milik Sendiri",
+          "skor": 100
+        },
+        {
+          "parameter": "Keamanan Bangunan",
+          "nilai": "Keamananbangunanenum.Tinggi",
+          "skor": 100
+        },
+        {
+          "parameter": "Jenis Lantai",
+          "nilai": "Jenislantaienum.Keramik",
+          "skor": 90
+        },
+        {
+          "parameter": "Jenis Dinding",
+          "nilai": "Jenisdindingenum.Tembok",
+          "skor": 100
+        },
+        {
+          "parameter": "Jenis Atap",
+          "nilai": "Jenisatapenum.Genteng Tanah Liat",
+          "skor": 100
+        }
+      ]
+    },
+    {
+      "nama": "Air Bersih dan Sanitasi",
+      "skor": 100,
+      "skor_maks": 100,
+      "bobot": 25.0,
+      "kontribusi": 25.0,
+      "interpretasi": "Sangat Baik",
+      "detail": [
+        {
+          "parameter": "Air Bersih",
+          "nilai": "Airbersihenum.Lancar",
+          "skor": 100
+        },
+        {
+          "parameter": "Sumber Air",
+          "nilai": "Sumberairenum.Pdam",
+          "skor": 100
+        },
+        {
+          "parameter": "Kualitas Air",
+          "nilai": "Tidak ada data",
+          "skor": 0
+        },
+        {
+          "parameter": "Sanitasi",
+          "nilai": "Sanitasienum.Layak",
+          "skor": 100
+        }
+      ]
+    },
+    {
+      "nama": "Fasilitas Pendukung",
+      "skor": 83,
+      "skor_maks": 100,
+      "bobot": 20.0,
+      "kontribusi": 16.6,
+      "interpretasi": "Baik",
+      "detail": [
+        {
+          "parameter": "Sumber Listrik",
+          "nilai": "Sumberlistrikenum.Pln",
+          "skor": 100
+        },
+        {
+          "parameter": "Kestabilan Listrik",
+          "nilai": "Kestabilanenum.Stabil",
+          "skor": 100
+        },
+        {
+          "parameter": "Fasilitas Mengajar",
+          "nilai": "Cukup Lengkap",
+          "skor": 70
+        },
+        {
+          "parameter": "Fasilitas Komunikasi",
+          "nilai": "Cukup Lengkap",
+          "skor": 50
+        },
+        {
+          "parameter": "Fasilitas Transportasi",
+          "nilai": "Fasilitastransportasienum.Angkutan Umum",
+          "skor": 80
+        },
+        {
+          "parameter": "Akses Jalan",
+          "nilai": "Aksesjalanenum.Aspal",
+          "skor": 100
+        }
+      ]
+    },
+    {
+      "nama": "Mutu Pendidikan",
+      "skor": 93,
+      "skor_maks": 100,
+      "bobot": 15.0,
+      "kontribusi": 13.95,
+      "interpretasi": "Sangat Baik",
+      "detail": [
+        {
+          "parameter": "Jenjang Pendidikan",
+          "nilai": "Jenjangpendidikanenum.Semua Ra Ma",
+          "skor": 100
+        },
+        {
+          "parameter": "Kurikulum",
+          "nilai": "Kurikulumenum.Terstandar",
+          "skor": 100
+        },
+        {
+          "parameter": "Akreditasi",
+          "nilai": "Akreditasienum.A",
+          "skor": 100
+        },
+        {
+          "parameter": "Prestasi Santri",
+          "nilai": "Prestasienum.Regional",
+          "skor": 75
+        }
+      ]
+    }
+  ],
+  "skor_total": 94,
+  "kategori_kelayakan": "sangat_layak",
+  "interpretasi_kategori": "Kondisi sangat baik, memenuhi semua standar kelayakan"
+}

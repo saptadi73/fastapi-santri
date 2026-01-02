@@ -185,6 +185,226 @@ GET /gis/heatmap
 ]
 ```
 
+### Choropleth Map - Santri by Kabupaten
+Get aggregated santri statistics per kabupaten for choropleth visualization.
+
+```
+GET /gis/choropleth/santri-kabupaten?provinsi=Jawa Barat&kategori_kemiskinan=Miskin
+```
+
+**Query Parameters:**
+- `provinsi` (optional): Filter by province name
+- `kategori_kemiskinan` (optional): Filter by poverty category (Sangat Miskin, Miskin, Rentan, Tidak Miskin)
+
+**Response (200 OK):**
+```json
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[107.5, -6.8], [107.7, -6.8], [107.7, -7.0], [107.5, -7.0], [107.5, -6.8]]]
+      },
+      "properties": {
+        "kabupaten": "Bandung",
+        "provinsi": "Jawa Barat",
+        "total_santri": 1250,
+        "sangat_miskin": 320,
+        "miskin": 450,
+        "rentan": 380,
+        "tidak_miskin": 100,
+        "avg_skor": 65.5,
+        "pct_sangat_miskin": 25.6,
+        "pct_miskin": 36.0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[108.2, -7.3], [108.5, -7.3], [108.5, -7.6], [108.2, -7.6], [108.2, -7.3]]]
+      },
+      "properties": {
+        "kabupaten": "Tasikmalaya",
+        "provinsi": "Jawa Barat",
+        "total_santri": 890,
+        "sangat_miskin": 280,
+        "miskin": 340,
+        "rentan": 210,
+        "tidak_miskin": 60,
+        "avg_skor": 68.2,
+        "pct_sangat_miskin": 31.5,
+        "pct_miskin": 38.2
+      }
+    }
+  ]
+}
+```
+
+**Properties Explanation:**
+- `total_santri`: Total number of santri in the kabupaten
+- `sangat_miskin`: Count of "Sangat Miskin" category
+- `miskin`: Count of "Miskin" category
+- `rentan`: Count of "Rentan" category
+- `tidak_miskin`: Count of "Tidak Miskin" category
+- `avg_skor`: Average poverty score (0-100)
+- `pct_sangat_miskin`: Percentage of santri in "Sangat Miskin" category
+- `pct_miskin`: Percentage of santri in "Miskin" category
+
+**Use Case - Leaflet/Mapbox Visualization:**
+```javascript
+// Fetch choropleth data
+const response = await fetch('/gis/choropleth/santri-kabupaten');
+const geojson = await response.json();
+
+// Add to Leaflet map with color scale
+L.geoJSON(geojson, {
+  style: function(feature) {
+    return {
+      fillColor: getColor(feature.properties.avg_skor),
+      weight: 1,
+      opacity: 1,
+      color: 'white',
+      fillOpacity: 0.7
+    };
+  },
+  onEachFeature: function(feature, layer) {
+    const props = feature.properties;
+    layer.bindPopup(`
+      <b>${props.kabupaten}</b><br>
+      Total Santri: ${props.total_santri}<br>
+      Sangat Miskin: ${props.sangat_miskin} (${props.pct_sangat_miskin}%)<br>
+      Miskin: ${props.miskin} (${props.pct_miskin}%)<br>
+      Avg Score: ${props.avg_skor}
+    `);
+  }
+}).addTo(map);
+
+// Color scale based on average score
+function getColor(score) {
+  return score > 80 ? '#d73027' :  // Sangat Miskin (dark red)
+         score > 65 ? '#fc8d59' :  // Miskin (orange)
+         score > 45 ? '#fee08b' :  // Rentan (yellow)
+                      '#91cf60';   // Tidak Miskin (green)
+}
+```
+
+### Choropleth Map - Pesantren by Kabupaten
+Get aggregated pesantren statistics per kabupaten for choropleth visualization.
+
+```
+GET /gis/choropleth/pesantren-kabupaten?provinsi=Jawa Barat&kategori_kelayakan=Layak
+```
+
+**Query Parameters:**
+- `provinsi` (optional): Filter by province name
+- `kategori_kelayakan` (optional): Filter by eligibility category (Sangat Layak, Layak, Cukup Layak, Kurang Layak)
+
+**Response (200 OK):**
+```json
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[107.5, -6.8], [107.7, -6.8], [107.7, -7.0], [107.5, -7.0], [107.5, -6.8]]]
+      },
+      "properties": {
+        "kabupaten": "Bandung",
+        "provinsi": "Jawa Barat",
+        "total_pesantren": 45,
+        "sangat_layak": 12,
+        "layak": 18,
+        "cukup_layak": 10,
+        "kurang_layak": 5,
+        "avg_skor": 72.5,
+        "total_santri_pesantren": 5600,
+        "pct_sangat_layak": 26.7,
+        "pct_layak": 40.0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[108.2, -7.3], [108.5, -7.3], [108.5, -7.6], [108.2, -7.6], [108.2, -7.3]]]
+      },
+      "properties": {
+        "kabupaten": "Tasikmalaya",
+        "provinsi": "Jawa Barat",
+        "total_pesantren": 38,
+        "sangat_layak": 8,
+        "layak": 15,
+        "cukup_layak": 12,
+        "kurang_layak": 3,
+        "avg_skor": 68.8,
+        "total_santri_pesantren": 4200,
+        "pct_sangat_layak": 21.1,
+        "pct_layak": 39.5
+      }
+    }
+  ]
+}
+```
+
+**Properties Explanation:**
+- `total_pesantren`: Total number of pesantren in the kabupaten
+- `sangat_layak`: Count of "Sangat Layak" category
+- `layak`: Count of "Layak" category
+- `cukup_layak`: Count of "Cukup Layak" category
+- `kurang_layak`: Count of "Kurang Layak" category
+- `avg_skor`: Average eligibility score (0-100)
+- `total_santri_pesantren`: Total santri across all pesantren in kabupaten
+- `pct_sangat_layak`: Percentage of "Sangat Layak" pesantren
+- `pct_layak`: Percentage of "Layak" pesantren
+
+### Choropleth Statistics
+Get summary statistics for choropleth visualization options.
+
+```
+GET /gis/choropleth/stats
+```
+
+**Response (200 OK):**
+```json
+{
+  "santri_categories": [
+    { "kategori": "Miskin", "count": 1250 },
+    { "kategori": "Rentan", "count": 890 },
+    { "kategori": "Sangat Miskin", "count": 650 },
+    { "kategori": "Tidak Miskin", "count": 210 }
+  ],
+  "pesantren_categories": [
+    { "kategori": "Layak", "count": 85 },
+    { "kategori": "Sangat Layak", "count": 45 },
+    { "kategori": "Cukup Layak", "count": 38 },
+    { "kategori": "Kurang Layak", "count": 12 }
+  ],
+  "kabupaten_list": [
+    "Bandung",
+    "Bogor",
+    "Cirebon",
+    "Garut",
+    "Tasikmalaya"
+  ],
+  "provinsi_list": [
+    "Banten",
+    "Jawa Barat",
+    "Jawa Tengah",
+    "Jawa Timur"
+  ]
+}
+```
+
+**Use Case:**
+- Populate filter dropdowns in UI
+- Display available categories for legend
+- Show data distribution statistics
+
 ---
 
 ## Santri Pribadi (Core Data)
@@ -1839,6 +2059,19 @@ This system has two separate scoring modules:
 - ✅ Frontend can **display historical scores** from database
 - ✅ No need to recalculate all records when updating one santri/pesantren
 
+**Recent Updates (v1.0.0 - January 2026):**
+- ✅ Fixed `status_pembayaran` mapping - now properly scored in pembiayaan dimension
+- ✅ Fixed `tunggakan_bulan` mapping - now properly scored in pembiayaan dimension
+- ✅ Added NULL handling with `is_null` operator for missing pembiayaan data
+- ✅ Added `empty` and `not_empty` operators for string field validation
+- ✅ Added direct field mappings for `status_gizi`, `riwayat_penyakit`, `kebutuhan_khusus`
+- ✅ Improved scoring accuracy by ensuring all configured parameters are evaluated
+
+**Breaking Changes:**
+- ⚠️ **Pembiayaan scores will change** after recalculation due to previously missing fields
+- ⚠️ **Recommended**: Recalculate all santri scores to reflect accurate pembiayaan data
+- ⚠️ **Example**: Santri with `status_pembayaran="terlambat"` and `tunggakan_bulan=5` now gets +10 points instead of previous incomplete calculation
+
 **Typical Workflow:**
 1. **After creating/updating** santri data → Call calculate API
 2. **Display scores** → Fetch from database via GET endpoints
@@ -1868,19 +2101,21 @@ POST /api/scoring/{santri_id}/calculate
   "success": true,
   "message": "Skor berhasil dihitung dan disimpan",
   "data": {
-    "id": "bb0e8400-e29b-41d4-a716-446655440006",
-    "santri_id": "550e8400-e29b-41d4-a716-446655440000",
-    "skor_ekonomi": 25,
-    "skor_rumah": 15,
-    "skor_aset": 10,
-    "skor_pembiayaan": 8,
-    "skor_kesehatan": 5,
-    "skor_bansos": 3,
-    "skor_total": 66,
-    "kategori_kemiskinan": "Miskin",
-    "metode": "pesantren_kemiskinan_v1",
-    "version": "1.0.0",
-    "calculated_at": "2025-12-28T10:30:45.123Z",
+    "skor": {
+      "id": "bb0e8400-e29b-41d4-a716-446655440006",
+      "santri_id": "550e8400-e29b-41d4-a716-446655440000",
+      "skor_ekonomi": 25,
+      "skor_rumah": 22,
+      "skor_aset": 23,
+      "skor_pembiayaan": 2,
+      "skor_kesehatan": 0,
+      "skor_bansos": 11,
+      "skor_total": 83,
+      "kategori_kemiskinan": "Sangat Miskin",
+      "metode": "pesantren_kemiskinan_v1",
+      "version": "1.0.0",
+      "calculated_at": "2025-12-28T10:30:45.123Z"
+    },
     "breakdown": {
       "dimensi": [
         {
@@ -1958,8 +2193,18 @@ POST /api/scoring/{santri_id}/calculate
           "detail": [
             {
               "parameter": "Sumber Biaya",
-              "nilai": "beasiswa",
-              "skor": 8
+              "nilai": "orang_tua",
+              "skor": 2
+            },
+            {
+              "parameter": "Status Pembayaran",
+              "nilai": "terlambat",
+              "skor": 5
+            },
+            {
+              "parameter": "Tunggakan Bulan",
+              "nilai": "5",
+              "skor": 5
             }
           ]
         },
@@ -1975,6 +2220,16 @@ POST /api/scoring/{santri_id}/calculate
               "parameter": "Status Gizi",
               "nilai": "kurang",
               "skor": 10
+            },
+            {
+              "parameter": "Riwayat Penyakit",
+              "nilai": "Asma",
+              "skor": 8
+            },
+            {
+              "parameter": "Kebutuhan Khusus",
+              "nilai": "Tidak ada data",
+              "skor": 0
             }
           ]
         },
@@ -2280,7 +2535,7 @@ Based on `scoring.json` configuration:
 |---------|-------|-----------|-----------|
 | Ekonomi | 30% | 40 | pendapatan_bulanan (orangtua), pekerjaan (orangtua), pendidikan (orangtua) |
 | Rumah | 25% | 43 | status_rumah, jenis_lantai, jenis_dinding, jenis_atap, akses_air_bersih, daya_listrik_va |
-| Aset | 15% | 23 | motor, mobil, lahan, hp (count per jenis aset) |
+| Aset | 15% | 23 | motor, mobil, lahan, hp, ternak, sepeda, laptop, alat_kerja, lainnya (count per jenis aset) |
 | Pembiayaan | 15% | 25 | sumber_biaya, status_pembayaran, tunggakan_bulan |
 | Kesehatan | 10% | 25 | status_gizi, riwayat_penyakit, kebutuhan_khusus |
 | Bansos | 5% | 17 | pkh, bpnt, pip, kis_pbi, blt_desa (false = skor tinggi, belum menerima bantuan) |
@@ -2288,10 +2543,78 @@ Based on `scoring.json` configuration:
 **Key Scoring Logic:**
 - **Ekonomi**: Pendapatan < 500K = 30 poin, Pekerjaan buruh/petani = 5 poin, Pendidikan SD/tidak sekolah = 5 poin
 - **Rumah**: Status menumpang = 10 poin, Lantai tanah = 10 poin, Dinding bambu = 8 poin, Listrik 450VA = 8 poin
-- **Aset**: Tidak punya motor/mobil/lahan/HP = skor tinggi (kemiskinan)
-- **Pembiayaan**: Sumber donatur/beasiswa = skor tinggi, Status menunggak = 10 poin
-- **Kesehatan**: Status gizi kurang = 10 poin, Ada riwayat penyakit = 8 poin
+- **Aset**: Tidak punya motor/mobil/lahan/HP/ternak/sepeda/laptop/alat_kerja/lainnya = skor tinggi (kemiskinan)
+- **Pembiayaan**: 
+  - Sumber donatur = 10 poin, beasiswa = 8 poin, wali = 5 poin, orang_tua = 2 poin
+  - Status menunggak = 10 poin, terlambat = 5 poin, lancar = 0 poin, NULL = 3 poin
+  - Tunggakan ≥3 bulan = 5 poin, ≥1 bulan = 3 poin, 0 bulan = 0 poin, NULL = 2 poin
+- **Kesehatan**: 
+  - Status gizi kurang = 10 poin, lebih = 5 poin, baik = 0 poin
+  - Riwayat penyakit ada (not empty) = 8 poin, tidak ada (empty) = 0 poin
+  - Kebutuhan khusus ada (not empty) = 7 poin, tidak ada (empty) = 0 poin
 - **Bansos**: Belum menerima PKH/PIP/BPNT/KIS = skor tinggi (indikator perlu bantuan)
+
+### Scoring Operators
+
+Sistem scoring mendukung operator berikut untuk evaluasi rules:
+
+| Operator | Deskripsi | Contoh Penggunaan |
+|----------|-----------|-------------------|
+| `==` | Sama dengan (equality) | `status_pembayaran == "lancar"` |
+| `<` | Kurang dari | `pendapatan_bulanan < 500000` |
+| `<=` | Kurang dari atau sama dengan | `pendapatan_bulanan <= 1000000` |
+| `>=` | Lebih dari atau sama dengan | `tunggakan_bulan >= 3` |
+| `in` | Nilai ada dalam list | `pekerjaan in ["buruh", "petani"]` |
+| `is_null` | Nilai NULL atau kosong | `status_pembayaran is_null` |
+| `empty` | String kosong atau NULL | `riwayat_penyakit empty` |
+| `not_empty` | String tidak kosong | `riwayat_penyakit not_empty` |
+
+**NULL Handling:**
+- Jika field pembiayaan/kesehatan NULL, sistem memberikan skor default (moderate risk)
+- `status_pembayaran` NULL → 3 poin (antara lancar dan terlambat)
+- `tunggakan_bulan` NULL → 2 poin (asumsi risiko sedang)
+- Field lain yang NULL → 0 poin (tidak berkontribusi ke skor)
+
+**Important Notes:**
+- ✅ **Latest Version (v1.0.0)**: Includes NULL handling and comprehensive field mapping
+- ✅ **Data Validation**: Ensure pembiayaan and kesehatan data is complete for accurate scoring
+- ✅ **Recalculate Required**: After updating pembiayaan/kesehatan data, call calculate API to refresh scores
+
+**Example: Pembiayaan Scoring Calculation**
+
+Given this data:
+```json
+{
+  "sumber_biaya": "orang_tua",
+  "status_pembayaran": "terlambat",
+  "tunggakan_bulan": 5
+}
+```
+
+Calculation:
+- `sumber_biaya="orang_tua"` → 2 points
+- `status_pembayaran="terlambat"` → 5 points
+- `tunggakan_bulan=5` (≥3) → 5 points
+- **Total Pembiayaan Score: 12/25**
+
+**Example: NULL Handling**
+
+Given incomplete data:
+```json
+{
+  "sumber_biaya": "beasiswa",
+  "status_pembayaran": null,
+  "tunggakan_bulan": null
+}
+```
+
+Calculation:
+- `sumber_biaya="beasiswa"` → 8 points
+- `status_pembayaran=null` → 3 points (moderate risk default)
+- `tunggakan_bulan=null` → 2 points (moderate risk default)
+- **Total Pembiayaan Score: 13/25**
+
+This ensures santri with missing data still get reasonable risk assessment.
 
 ---
 
@@ -2888,25 +3211,203 @@ if (scoreResponse.data.success) {
 **Response (200 OK):**
 ```json
 {
-  "id": "uuid",
-  "pesantren_id": "uuid",
-  "skor_kelayakan_fisik": 85,
-  "skor_air_sanitasi": 90,
-  "skor_fasilitas_pendukung": 75,
-  "skor_mutu_pendidikan": 80,
-  "skor_total": 83,
-  "kategori_kelayakan": "sangat_layak",
-  "metode": "weighted_average",
-  "version": "1.0",
-  "calculated_at": "2025-12-28T10:30:00"
+  "success": true,
+  "message": "Skor pesantren berhasil dihitung dan disimpan",
+  "data": {
+    "skor": {
+      "id": "uuid",
+      "pesantren_id": "uuid",
+      "skor_fisik": 98,
+      "skor_air_sanitasi": 100,
+      "skor_fasilitas_pendukung": 83,
+      "skor_mutu_pendidikan": 93,
+      "skor_total": 94,
+      "kategori_kelayakan": "sangat_layak",
+      "metode": "pondok_pesantren.rules",
+      "version": "1.1",
+      "calculated_at": "2025-12-28T10:30:00"
+    },
+    "breakdown": {
+      "dimensi": [
+        {
+          "nama": "Kelayakan Fisik Bangunan",
+          "skor": 98,
+          "skor_maks": 100,
+          "bobot": 40.0,
+          "kontribusi": 39.2,
+          "interpretasi": "Sangat Baik",
+          "detail": [
+            {
+              "parameter": "Kondisi Bangunan",
+              "nilai": "Permanen",
+              "skor": 100
+            },
+            {
+              "parameter": "Status Bangunan",
+              "nilai": "Milik Sendiri",
+              "skor": 100
+            },
+            {
+              "parameter": "Keamanan Bangunan",
+              "nilai": "Tinggi",
+              "skor": 100
+            },
+            {
+              "parameter": "Jenis Lantai",
+              "nilai": "Keramik",
+              "skor": 90
+            },
+            {
+              "parameter": "Jenis Dinding",
+              "nilai": "Tembok",
+              "skor": 100
+            },
+            {
+              "parameter": "Jenis Atap",
+              "nilai": "Genteng Tanah Liat",
+              "skor": 100
+            }
+          ]
+        },
+        {
+          "nama": "Air Bersih dan Sanitasi",
+          "skor": 100,
+          "skor_maks": 100,
+          "bobot": 25.0,
+          "kontribusi": 25.0,
+          "interpretasi": "Sangat Baik",
+          "detail": [
+            {
+              "parameter": "Air Bersih",
+              "nilai": "Lancar",
+              "skor": 100
+            },
+            {
+              "parameter": "Sumber Air",
+              "nilai": "PDAM",
+              "skor": 100
+            },
+            {
+              "parameter": "Sanitasi",
+              "nilai": "Layak",
+              "skor": 100
+            }
+          ]
+        },
+        {
+          "nama": "Fasilitas Pendukung",
+          "skor": 83,
+          "skor_maks": 100,
+          "bobot": 20.0,
+          "kontribusi": 16.6,
+          "interpretasi": "Baik",
+          "detail": [
+            {
+              "parameter": "Sumber Listrik",
+              "nilai": "PLN",
+              "skor": 100
+            },
+            {
+              "parameter": "Kestabilan Listrik",
+              "nilai": "Stabil",
+              "skor": 100
+            },
+            {
+              "parameter": "Fasilitas Mengajar",
+              "nilai": "Cukup Lengkap",
+              "skor": 70
+            },
+            {
+              "parameter": "Akses Jalan",
+              "nilai": "Aspal",
+              "skor": 100
+            }
+          ]
+        },
+        {
+          "nama": "Mutu Pendidikan",
+          "skor": 93,
+          "skor_maks": 100,
+          "bobot": 15.0,
+          "kontribusi": 13.95,
+          "interpretasi": "Sangat Baik",
+          "detail": [
+            {
+              "parameter": "Jenjang Pendidikan",
+              "nilai": "Semua Ra Ma",
+              "skor": 100
+            },
+            {
+              "parameter": "Kurikulum",
+              "nilai": "Terstandar",
+              "skor": 100
+            },
+            {
+              "parameter": "Akreditasi",
+              "nilai": "A",
+              "skor": 100
+            },
+            {
+              "parameter": "Prestasi Santri",
+              "nilai": "Regional",
+              "skor": 75
+            }
+          ]
+        }
+      ],
+      "skor_total": 94,
+      "kategori_kelayakan": "sangat_layak",
+      "interpretasi_kategori": "Kondisi sangat baik, memenuhi semua standar kelayakan"
+    }
+  }
 }
 ```
 
-**Scoring Dimensions:**
-- **Kelayakan Fisik (40%)**: Status bangunan, kondisi, luas, material bangunan (lantai, dinding, atap)
-- **Air & Sanitasi (25%)**: Sumber air, kualitas air, sanitasi (fasilitas MCK is managed in pesantren_fisik)
-- **Fasilitas Pendukung (20%)**: Listrik, fasilitas mengajar, komunikasi, transportasi, akses jalan
-- **Mutu Pendidikan (15%)**: Jenjang pendidikan, kurikulum, akreditasi, prestasi santri
+**Breakdown Fields Explanation:**
+- `nama`: Nama dimensi dengan format friendly
+- `skor`: Skor dimensi (0-100, semakin tinggi semakin baik)
+- `skor_maks`: Skor maksimal dimensi (selalu 100)
+- `bobot`: Bobot dimensi dalam persen (40.0 = 40%)
+- `kontribusi`: Kontribusi ke skor total (skor × bobot ÷ 100)
+- `interpretasi`: Interpretasi kondisi dimensi:
+  - **Sangat Baik**: Skor ≥ 85
+  - **Baik**: Skor 70-84
+  - **Cukup**: Skor 55-69
+  - **Kurang**: Skor < 55
+- `detail`: Array parameter yang berkontribusi ke skor dimensi
+  - `parameter`: Nama parameter yang dinilai
+  - `nilai`: Nilai aktual dari data pesantren
+  - `skor`: Skor yang didapat untuk parameter ini (0-100)
+- `interpretasi_kategori`: Penjelasan lengkap kategori kelayakan pesantren
+
+**Scoring Dimensions & Calculation:**
+
+The `skor_total` is calculated as **weighted average** of dimension scores:
+- Formula: `skor_total = Σ(skor_dimensi × bobot_dimensi)`
+- Each dimension score ranges from 0-100 (higher = better condition)
+- Final total score ranges from 0-100
+
+**Dimensions:**
+
+1. **Kelayakan Fisik Bangunan (40%)**
+   - Parameters: kondisi_bangunan, status_bangunan, keamanan_bangunan, jenis_lantai, jenis_dinding, jenis_atap
+   - Data source: `pesantren_fisik` table
+   - Evaluates physical structure quality and safety
+
+2. **Air Bersih dan Sanitasi (25%)**
+   - Parameters: air_bersih, sumber_air, kualitas_air, sanitasi
+   - Data source: `pesantren_fisik` table
+   - Evaluates water access and sanitation facilities
+
+3. **Fasilitas Pendukung (20%)**
+   - Parameters: sumber_listrik, kestabilan_listrik, fasilitas_mengajar, fasilitas_komunikasi, fasilitas_transportasi, akses_jalan
+   - Data source: `pesantren_fisik` and `pesantren_fasilitas` tables
+   - Evaluates supporting facilities and accessibility
+
+4. **Mutu Pendidikan (15%)**
+   - Parameters: jenjang_pendidikan, kurikulum, akreditasi, prestasi_santri
+   - Data source: `pesantren_pendidikan` table
+   - Evaluates educational quality and achievements
 
 **Mutu Pendidikan Parameters:**
 - `jenjang_pendidikan`: Kelengkapan jenjang (semua_ra_ma: 100, dasar_menengah_atas: 90, dasar_menengah_pertama: 75, pendidikan_dasar: 60, satu_jenjang: 50)
@@ -2915,10 +3416,19 @@ if (scoreResponse.data.success) {
 - `prestasi_santri`: Tingkat prestasi (nasional: 100, regional: 75, tidak_ada: 40)
 
 **Kategori Kelayakan:**
-- `sangat_layak`: Skor 85-100 (Excellent condition)
-- `layak`: Skor 70-84 (Good condition)
-- `cukup_layak`: Skor 55-69 (Fair condition)
-- `tidak_layak`: Skor 0-54 (Poor condition)
+
+| Skor Total | Kategori | Interpretasi |
+|-----------|----------|-------------|
+| ≥ 85 | sangat_layak | Kondisi sangat baik, memenuhi semua standar kelayakan |
+| 70-84 | layak | Kondisi baik, memenuhi standar kelayakan |
+| 55-69 | cukup_layak | Kondisi cukup, perlu perbaikan di beberapa aspek |
+| < 55 | tidak_layak | Kondisi kurang baik, memerlukan perbaikan menyeluruh |
+
+**Dimension Score Interpretation:**
+- **Sangat Baik**: 85-100 (Excellent)
+- **Baik**: 70-84 (Good)
+- **Cukup**: 55-69 (Fair)
+- **Kurang**: < 55 (Poor)
 
 ### Get Score by Pesantren ID
 Retrieve **latest saved score** for a pesantren from database (no calculation performed).

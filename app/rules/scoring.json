@@ -146,6 +146,46 @@
             { "operator": "==", "value": 0, "skor": 5 },
             { "operator": ">=", "value": 1, "skor": 1 }
           ]
+        },
+        {
+          "kode": "ternak",
+          "sumber": "santri_asset",
+          "rules": [
+            { "operator": "==", "value": 0, "skor": 4 },
+            { "operator": ">=", "value": 1, "skor": 1 }
+          ]
+        },
+        {
+          "kode": "sepeda",
+          "sumber": "santri_asset",
+          "rules": [
+            { "operator": "==", "value": 0, "skor": 4 },
+            { "operator": ">=", "value": 1, "skor": 1 }
+          ]
+        },
+        {
+          "kode": "laptop",
+          "sumber": "santri_asset",
+          "rules": [
+            { "operator": "==", "value": 0, "skor": 3 },
+            { "operator": ">=", "value": 1, "skor": 1 }
+          ]
+        },
+        {
+          "kode": "alat_kerja",
+          "sumber": "santri_asset",
+          "rules": [
+            { "operator": "==", "value": 0, "skor": 3 },
+            { "operator": ">=", "value": 1, "skor": 1 }
+          ]
+        },
+        {
+          "kode": "lainnya",
+          "sumber": "santri_asset",
+          "rules": [
+            { "operator": "==", "value": 0, "skor": 2 },
+            { "operator": ">=", "value": 1, "skor": 1 }
+          ]
         }
       ]
     },
@@ -170,7 +210,8 @@
           "rules": [
             { "operator": "==", "value": "menunggak",  "skor": 10 },
             { "operator": "==", "value": "terlambat",  "skor": 5 },
-            { "operator": "==", "value": "lancar",     "skor": 0 }
+            { "operator": "==", "value": "lancar",     "skor": 0 },
+            { "operator": "is_null", "value": null,     "skor": 3 }
           ]
         },
         {
@@ -179,7 +220,8 @@
           "rules": [
             { "operator": ">=", "value": 3, "skor": 5 },
             { "operator": ">=", "value": 1, "skor": 3 },
-            { "operator": "==", "value": 0, "skor": 0 }
+            { "operator": "==", "value": 0, "skor": 0 },
+            { "operator": "is_null", "value": null, "skor": 2 }
           ]
         }
       ]

@@ -14,10 +14,12 @@ class PesantrenSkor(UUIDBase):
     pesantren_id = Column(UUID(as_uuid=True), ForeignKey("pondok_pesantren.id", ondelete="CASCADE"), unique=True, nullable=False)
     
     # Dimension scores
-    skor_kelayakan_fisik = Column(Integer, nullable=False)
+    skor_fisik = Column(Integer, nullable=False)
     skor_air_sanitasi = Column(Integer, nullable=False)
     skor_fasilitas_pendukung = Column(Integer, nullable=False)
     skor_mutu_pendidikan = Column(Integer, nullable=False)
+    skor_fasilitas = Column(Integer, nullable=True)
+    skor_pendidikan = Column(Integer, nullable=True)
     
     # Total score and category
     skor_total = Column(Integer, nullable=False)

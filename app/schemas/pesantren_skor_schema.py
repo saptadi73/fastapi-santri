@@ -9,7 +9,7 @@ from uuid import UUID
 class PesantrenSkorBase(BaseModel):
     """Base schema for pesantren skor."""
     pesantren_id: UUID
-    skor_kelayakan_fisik: int
+    skor_fisik: int
     skor_air_sanitasi: int
     skor_fasilitas_pendukung: int
     skor_mutu_pendidikan: int
@@ -17,6 +17,8 @@ class PesantrenSkorBase(BaseModel):
     kategori_kelayakan: str
     metode: str
     version: str
+    skor_fasilitas: Optional[int] = None
+    skor_pendidikan: Optional[int] = None
 
 
 class PesantrenSkorResponse(PesantrenSkorBase):

@@ -22,17 +22,48 @@ def calculate_dimension_score(
     repo: PesantrenDataRepository,
     pesantren_id: UUID,
     dimension: Dict[str, Any]
-) -> int:
-    """Calculate score for one dimension based on parameters."""
+) -> Tuple[int, list]:
+    """Calculate score for one dimension based on parameters.
+    
+    Returns:
+        - int: average score for dimension
+        - list: parameter details for breakdown
+    """
     # Get all data
     data = repo.get_all(pesantren_id)
     
     total_param_score = 0
     param_count = 0
+    detail_params = []
+    
+    # Map parameter keys to friendly names
+    param_name_map = {
+        "kondisi_bangunan": "Kondisi Bangunan",
+        "status_bangunan": "Status Bangunan",
+        "keamanan_bangunan": "Keamanan Bangunan",
+        "jenis_lantai": "Jenis Lantai",
+        "jenis_dinding": "Jenis Dinding",
+        "jenis_atap": "Jenis Atap",
+        "air_bersih": "Air Bersih",
+        "sumber_air": "Sumber Air",
+        "kualitas_air": "Kualitas Air",
+        "sanitasi": "Sanitasi",
+        "sumber_listrik": "Sumber Listrik",
+        "kestabilan_listrik": "Kestabilan Listrik",
+        "fasilitas_mengajar": "Fasilitas Mengajar",
+        "fasilitas_komunikasi": "Fasilitas Komunikasi",
+        "fasilitas_transportasi": "Fasilitas Transportasi",
+        "akses_jalan": "Akses Jalan",
+        "jenjang_pendidikan": "Jenjang Pendidikan",
+        "kurikulum": "Kurikulum",
+        "akreditasi": "Akreditasi",
+        "prestasi_santri": "Prestasi Santri"
+    }
     
     for param in dimension["parameters"]:
         key = param["key"]
         mapping = param["mapping"]
+        param_name = param_name_map.get(key, key.replace("_", " ").title())
         
         # Find value from appropriate table
         value = None
@@ -50,13 +81,23 @@ def calculate_dimension_score(
             value = getattr(data["pendidikan"], key)
         
         # Map value to score
+        param_score = 0
         if value and value in mapping:
-            total_param_score += mapping[value]
+            param_score = mapping[value]
+            total_param_score += param_score
             param_count += 1
         elif value:
             # If value exists but not in mapping, use lowest score
-            total_param_score += min(mapping.values()) if mapping else 0
+            param_score = min(mapping.values()) if mapping else 0
+            total_param_score += param_score
             param_count += 1
+        
+        # Add to detail breakdown
+        detail_params.append({
+            "parameter": param_name,
+            "nilai": str(value).replace("_", " ").title() if value else "Tidak ada data",
+            "skor": param_score
+        })
     
     # Calculate average score for this dimension
     if param_count > 0:
@@ -64,7 +105,7 @@ def calculate_dimension_score(
     else:
         avg_score = 0
     
-    return int(avg_score)
+    return int(avg_score), detail_params
 
 
 def categorize_score(total_score: int, result_mapping: list) -> str:
@@ -78,7 +119,7 @@ def categorize_score(total_score: int, result_mapping: list) -> str:
 def calculate_pesantren_scores_from_config(
     repo: PesantrenDataRepository,
     pesantren_id: UUID
-) -> Tuple[Dict[str, int], int, str, str, str]:
+) -> Tuple[Dict[str, int], int, str, str, str, Dict[str, Any]]:
     """
     Calculate all dimension scores and total for a pesantren.
     
@@ -88,6 +129,7 @@ def calculate_pesantren_scores_from_config(
         - category: category label
         - method: scoring method name
         - version: configuration version
+        - breakdown: detailed breakdown for display
     """
     config = load_pesantren_scoring_config()
     
@@ -96,19 +138,57 @@ def calculate_pesantren_scores_from_config(
     
     per_dimension = {}
     weighted_total = 0.0
+    breakdown_dimensi = []
+    
+    # Friendly dimension names
+    dimension_name_map = {
+        "kelayakan_fisik": "Kelayakan Fisik Bangunan",
+        "air_sanitasi": "Air Bersih dan Sanitasi",
+        "fasilitas_pendukung": "Fasilitas Pendukung",
+        "mutu_pendidikan": "Mutu Pendidikan"
+    }
+    
+    # Category interpretations
+    kategori_interpretasi = {
+        "sangat_layak": "Kondisi sangat baik, memenuhi semua standar kelayakan",
+        "layak": "Kondisi baik, memenuhi standar kelayakan",
+        "cukup_layak": "Kondisi cukup, perlu perbaikan di beberapa aspek",
+        "tidak_layak": "Kondisi kurang baik, memerlukan perbaikan menyeluruh"
+    }
     
     for dimension in dimensions:
         dim_key = dimension["key"]
         weight = dimension["weight"]
         
-        # Calculate raw score for this dimension
-        dim_score = calculate_dimension_score(repo, pesantren_id, dimension)
+        # Calculate raw score for this dimension with details
+        dim_score, detail_params = calculate_dimension_score(repo, pesantren_id, dimension)
         
         # Store dimension score
         per_dimension[f"skor_{dim_key}"] = dim_score
         
         # Add weighted contribution to total
-        weighted_total += dim_score * weight
+        contribution = dim_score * weight
+        weighted_total += contribution
+        
+        # Interpretasi dimensi berdasarkan skor
+        if dim_score >= 85:
+            interpretasi = "Sangat Baik"
+        elif dim_score >= 70:
+            interpretasi = "Baik"
+        elif dim_score >= 55:
+            interpretasi = "Cukup"
+        else:
+            interpretasi = "Kurang"
+        
+        breakdown_dimensi.append({
+            "nama": dimension_name_map.get(dim_key, dim_key.replace("_", " ").title()),
+            "skor": dim_score,
+            "skor_maks": 100,
+            "bobot": weight * 100,  # Convert to percentage
+            "kontribusi": round(contribution, 2),
+            "interpretasi": interpretasi,
+            "detail": detail_params
+        })
     
     total_score = int(weighted_total)
     category = categorize_score(total_score, result_mapping)
@@ -116,7 +196,14 @@ def calculate_pesantren_scores_from_config(
     method = f"{config['scoring_type']}.rules"
     version = config["version"]
     
-    return per_dimension, total_score, category, method, version
+    breakdown = {
+        "dimensi": breakdown_dimensi,
+        "skor_total": total_score,
+        "kategori_kelayakan": category,
+        "interpretasi_kategori": kategori_interpretasi.get(category, "")
+    }
+    
+    return per_dimension, total_score, category, method, version, breakdown
 
 
 def aggregate_pesantren_scores(

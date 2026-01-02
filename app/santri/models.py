@@ -28,4 +28,5 @@ class Santri(Base):
     )
 
     # Relationship
-    pesantren = relationship("PondokPesantren", back_populates="santri_gis")
+    # Legacy GIS link; keep unidirectional to avoid conflicting with SantriMap mapping
+    pesantren = relationship("PondokPesantren")

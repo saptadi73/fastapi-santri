@@ -40,7 +40,8 @@ class PondokPesantren(UUIDBase):
     fasilitas = relationship("PesantrenFasilitas", back_populates="pesantren", uselist=False)
     pendidikan = relationship("PesantrenPendidikan", back_populates="pesantren", uselist=False)
     santri = relationship("SantriPribadi", back_populates="pesantren")
-    santri_gis = relationship("Santri", back_populates="pesantren")
+    # GIS mapping entries for santri
+    santri_gis = relationship("SantriMap", back_populates="pesantren")
     skor = relationship("PesantrenSkor", back_populates="pesantren", uselist=False)
     foto_pesantren = relationship(
         "FotoPesantren",

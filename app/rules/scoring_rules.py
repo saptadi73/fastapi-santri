@@ -143,18 +143,45 @@ def aggregate_scores(data: Dict[str, Any]) -> Tuple[Dict[str, int], int, str]:
 
 
 def _apply_rule(op: str, value: Any, target: Any) -> bool:
-    # Support basic operators: ==, <, <=, >=, in
+    # Support basic operators: ==, <, <=, >=, in, is_null, empty, not_empty
     try:
+        # Handle is_null operator
+        if op == "is_null":
+            return target is None or (isinstance(target, str) and target.strip() == "")
+        
+        # Handle empty operator (checks if target is None or empty string)
+        if op == "empty":
+            return target is None or (isinstance(target, str) and target.strip() == "")
+        
+        # Handle not_empty operator (checks if target has a value)
+        if op == "not_empty":
+            return target is not None and (not isinstance(target, str) or target.strip() != "")
+        
+        # For other operators, if target is None, they should fail
+        if target is None:
+            return False
+            
+        # Normalize simple string comparisons to be case-insensitive
+        tgt_str = str(target).lower() if isinstance(target, str) else target
+        val_str = str(value).lower() if isinstance(value, str) else value
+
         if op == "==":
-            return target == value
+            return tgt_str == val_str
         if op == "<":
-            return (target is not None) and (float(target) < float(value))
+            return float(target) < float(value)
         if op == "<=":
-            return (target is not None) and (float(target) <= float(value))
+            return float(target) <= float(value)
         if op == ">=":
-            return (target is not None) and (float(target) >= float(value))
+            return float(target) >= float(value)
         if op == "in":
-            return target in value  # value expected to be list
+            if value is None:
+                return False
+            if isinstance(value, list):
+                # Case-insensitive membership for strings
+                if isinstance(target, str):
+                    return tgt_str in [str(v).lower() for v in value]
+                return target in value
+            return False
     except Exception:
         return False
     return False
@@ -173,7 +200,7 @@ def calculate_scores_from_config(repo: SantriDataRepository, santri_id: UUID) ->
 
     dimensi = cfg.get("dimensi", {})
     per_component: Dict[str, int] = {}
-    total_score_float = 0.0
+    total_raw = 0.0
     breakdown_dimensi = []
 
     # Interpretasi mapping untuk kategori
@@ -227,9 +254,7 @@ def calculate_scores_from_config(repo: SantriDataRepository, santri_id: UUID) ->
                 })
 
         raw_dim = min(raw_dim, skor_maks)
-        # Dimension weighted contribution
-        contrib = bobot * raw_dim
-        total_score_float += contrib
+        total_raw += raw_dim
         per_component[f"skor_{dim_key}"] = int(round(raw_dim))
         
         # Interpretasi dimensi berdasarkan skor
@@ -259,13 +284,13 @@ def calculate_scores_from_config(repo: SantriDataRepository, santri_id: UUID) ->
             "skor": int(round(raw_dim)),
             "skor_maks": skor_maks,
             "bobot": bobot * 100,  # Convert to percentage
-            "kontribusi": round(contrib, 2),
+            "kontribusi": int(round(raw_dim)),  # Use raw dimension score for clarity
             "interpretasi": interpretasi,
             "detail": detail_params if detail_params else None
         })
 
-    # Normalise to total_max if needed: current design assumes skor_maks weighted sum already in 0-100 scale
-    total_int = int(round(total_score_float))
+    # Total is now the sum of raw dimension scores to align with displayed component totals
+    total_int = int(round(total_raw))
 
     # Category mapping
     kategori = ""

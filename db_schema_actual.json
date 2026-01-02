@@ -1,0 +1,1086 @@
+{
+  "alembic_version": {
+    "columns": {
+      "version_num": {
+        "type": "VARCHAR(32)",
+        "nullable": false
+      }
+    }
+  },
+  "foto_asset": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "asset_id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "nama_file": {
+        "type": "VARCHAR(255)",
+        "nullable": false
+      },
+      "url_photo": {
+        "type": "VARCHAR(500)",
+        "nullable": false
+      }
+    }
+  },
+  "foto_orangtua": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "orangtua_id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "nama_file": {
+        "type": "VARCHAR(255)",
+        "nullable": false
+      },
+      "url_photo": {
+        "type": "VARCHAR(500)",
+        "nullable": false
+      }
+    }
+  },
+  "foto_pesantren": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "pesantren_id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "nama_file": {
+        "type": "VARCHAR(255)",
+        "nullable": false
+      },
+      "url_photo": {
+        "type": "VARCHAR(500)",
+        "nullable": false
+      }
+    }
+  },
+  "foto_rumah": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "rumah_id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "nama_file": {
+        "type": "VARCHAR(255)",
+        "nullable": false
+      },
+      "url_photo": {
+        "type": "VARCHAR(500)",
+        "nullable": false
+      }
+    }
+  },
+  "foto_santri": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "santri_id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "nama_file": {
+        "type": "VARCHAR(255)",
+        "nullable": false
+      },
+      "url_photo": {
+        "type": "VARCHAR(500)",
+        "nullable": false
+      }
+    }
+  },
+  "layer": {
+    "columns": {
+      "topology_id": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "layer_id": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "schema_name": {
+        "type": "VARCHAR",
+        "nullable": false
+      },
+      "table_name": {
+        "type": "VARCHAR",
+        "nullable": false
+      },
+      "feature_column": {
+        "type": "VARCHAR",
+        "nullable": false
+      },
+      "feature_type": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "level": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "child_id": {
+        "type": "INTEGER",
+        "nullable": true
+      }
+    }
+  },
+  "pesantren_fasilitas": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "pesantren_id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "jumlah_kamar": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "jumlah_ruang_kelas": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "jumlah_masjid": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "perpustakaan": {
+        "type": "BOOLEAN",
+        "nullable": false
+      },
+      "laboratorium": {
+        "type": "BOOLEAN",
+        "nullable": false
+      },
+      "ruang_komputer": {
+        "type": "BOOLEAN",
+        "nullable": false
+      },
+      "fasilitas_olahraga": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "fasilitas_kesehatan": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "koperasi": {
+        "type": "BOOLEAN",
+        "nullable": false
+      },
+      "kantin": {
+        "type": "BOOLEAN",
+        "nullable": false
+      },
+      "fasilitas_mengajar": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "fasilitas_komunikasi": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "akses_transportasi": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "akses_jalan": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "jarak_ke_kota_km": {
+        "type": "DOUBLE PRECISION",
+        "nullable": true
+      },
+      "asrama": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "ruang_belajar": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "internet": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "fasilitas_transportasi": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "created_at": {
+        "type": "TIMESTAMP",
+        "nullable": true
+      },
+      "updated_at": {
+        "type": "TIMESTAMP",
+        "nullable": true
+      },
+      "metode_pembayaran": {
+        "type": "VARCHAR",
+        "nullable": true
+      }
+    }
+  },
+  "pesantren_fisik": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "pesantren_id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "luas_tanah": {
+        "type": "DOUBLE PRECISION",
+        "nullable": true
+      },
+      "luas_bangunan": {
+        "type": "DOUBLE PRECISION",
+        "nullable": true
+      },
+      "status_bangunan": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "kondisi_bangunan": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "sumber_air": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "kualitas_air_bersih": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "fasilitas_mck": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "jumlah_mck": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "jenis_lantai": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "jenis_dinding": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "jenis_atap": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "sumber_listrik": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "daya_listrik_va": {
+        "type": "VARCHAR(20)",
+        "nullable": true
+      },
+      "kestabilan_listrik": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "sistem_keamanan": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "rasio_kepadatan_kamar": {
+        "type": "DOUBLE PRECISION",
+        "nullable": false
+      },
+      "sanitasi": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "air_bersih": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "keamanan_bangunan": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "created_at": {
+        "type": "TIMESTAMP",
+        "nullable": true
+      },
+      "updated_at": {
+        "type": "TIMESTAMP",
+        "nullable": true
+      }
+    }
+  },
+  "pesantren_map": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "pesantren_id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "nama": {
+        "type": "VARCHAR(200)",
+        "nullable": false
+      },
+      "nsp": {
+        "type": "VARCHAR(50)",
+        "nullable": true
+      },
+      "skor_terakhir": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "kategori_kelayakan": {
+        "type": "VARCHAR(50)",
+        "nullable": false
+      },
+      "lokasi": {
+        "type": "NULL",
+        "nullable": true
+      },
+      "kabupaten": {
+        "type": "VARCHAR(100)",
+        "nullable": true
+      },
+      "provinsi": {
+        "type": "VARCHAR(100)",
+        "nullable": true
+      },
+      "jumlah_santri": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "created_at": {
+        "type": "TIMESTAMP",
+        "nullable": true
+      },
+      "updated_at": {
+        "type": "TIMESTAMP",
+        "nullable": true
+      }
+    }
+  },
+  "pesantren_pendidikan": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "pesantren_id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "jenjang_pendidikan": {
+        "type": "VARCHAR(22)",
+        "nullable": true
+      },
+      "kurikulum": {
+        "type": "VARCHAR(11)",
+        "nullable": true
+      },
+      "akreditasi": {
+        "type": "VARCHAR(5)",
+        "nullable": true
+      },
+      "jumlah_guru_tetap": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "jumlah_guru_tidak_tetap": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "guru_s1_keatas": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "prestasi_akademik": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "prestasi_non_akademik": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "program_unggulan": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "metode_pembayaran": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "biaya_bulanan_min": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "biaya_bulanan_max": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "persen_guru_bersertifikat": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "rasio_guru_santri": {
+        "type": "DOUBLE PRECISION",
+        "nullable": true
+      },
+      "prestasi_santri": {
+        "type": "VARCHAR(9)",
+        "nullable": true
+      },
+      "fasilitas_mengajar": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "created_at": {
+        "type": "TIMESTAMP",
+        "nullable": true
+      },
+      "updated_at": {
+        "type": "TIMESTAMP",
+        "nullable": true
+      }
+    }
+  },
+  "pesantren_skor": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "pesantren_id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "skor_kelayakan_fisik": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "skor_air_sanitasi": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "skor_fasilitas_pendukung": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "skor_mutu_pendidikan": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "skor_total": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "kategori_kelayakan": {
+        "type": "VARCHAR(30)",
+        "nullable": false
+      },
+      "metode": {
+        "type": "VARCHAR(50)",
+        "nullable": false
+      },
+      "version": {
+        "type": "VARCHAR(20)",
+        "nullable": false
+      },
+      "calculated_at": {
+        "type": "TIMESTAMP",
+        "nullable": true
+      }
+    }
+  },
+  "pondok_pesantren": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "nama": {
+        "type": "VARCHAR(200)",
+        "nullable": false
+      },
+      "nsp": {
+        "type": "VARCHAR(20)",
+        "nullable": true
+      },
+      "alamat": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "desa": {
+        "type": "VARCHAR(100)",
+        "nullable": true
+      },
+      "kecamatan": {
+        "type": "VARCHAR(100)",
+        "nullable": true
+      },
+      "kabupaten": {
+        "type": "VARCHAR(100)",
+        "nullable": true
+      },
+      "provinsi": {
+        "type": "VARCHAR(100)",
+        "nullable": true
+      },
+      "kode_pos": {
+        "type": "VARCHAR(10)",
+        "nullable": true
+      },
+      "lokasi": {
+        "type": "NULL",
+        "nullable": true
+      },
+      "telepon": {
+        "type": "VARCHAR(15)",
+        "nullable": true
+      },
+      "email": {
+        "type": "VARCHAR(100)",
+        "nullable": true
+      },
+      "website": {
+        "type": "VARCHAR(100)",
+        "nullable": true
+      },
+      "nama_kyai": {
+        "type": "VARCHAR(150)",
+        "nullable": true
+      },
+      "jumlah_santri": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "jumlah_guru": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "tahun_berdiri": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "created_at": {
+        "type": "TIMESTAMP",
+        "nullable": true
+      },
+      "updated_at": {
+        "type": "TIMESTAMP",
+        "nullable": true
+      },
+      "foto_path": {
+        "type": "VARCHAR(500)",
+        "nullable": true
+      }
+    }
+  },
+  "santri": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "pesantren_id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "name": {
+        "type": "VARCHAR",
+        "nullable": false
+      },
+      "ekonomi": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "score": {
+        "type": "DOUBLE PRECISION",
+        "nullable": true
+      },
+      "lokasi": {
+        "type": "NULL",
+        "nullable": true
+      }
+    }
+  },
+  "santri_asset": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "santri_id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "jenis_aset": {
+        "type": "VARCHAR",
+        "nullable": false
+      },
+      "jumlah": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "nilai_perkiraan": {
+        "type": "INTEGER",
+        "nullable": true
+      }
+    }
+  },
+  "santri_bansos": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "santri_id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "pkh": {
+        "type": "BOOLEAN",
+        "nullable": false
+      },
+      "bpnt": {
+        "type": "BOOLEAN",
+        "nullable": false
+      },
+      "pip": {
+        "type": "BOOLEAN",
+        "nullable": false
+      },
+      "kis_pbi": {
+        "type": "BOOLEAN",
+        "nullable": false
+      },
+      "blt_desa": {
+        "type": "BOOLEAN",
+        "nullable": false
+      },
+      "bantuan_lainnya": {
+        "type": "VARCHAR",
+        "nullable": true
+      }
+    }
+  },
+  "santri_kesehatan": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "santri_id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "tinggi_badan": {
+        "type": "DOUBLE PRECISION",
+        "nullable": true
+      },
+      "berat_badan": {
+        "type": "DOUBLE PRECISION",
+        "nullable": true
+      },
+      "status_gizi": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "riwayat_penyakit": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "alergi_obat": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "kebutuhan_khusus": {
+        "type": "VARCHAR",
+        "nullable": true
+      }
+    }
+  },
+  "santri_map": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "santri_id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "nama": {
+        "type": "VARCHAR(150)",
+        "nullable": false
+      },
+      "skor_terakhir": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "kategori_kemiskinan": {
+        "type": "VARCHAR(50)",
+        "nullable": false
+      },
+      "lokasi": {
+        "type": "NULL",
+        "nullable": true
+      },
+      "pesantren_id": {
+        "type": "UUID",
+        "nullable": true
+      },
+      "created_at": {
+        "type": "TIMESTAMP",
+        "nullable": true
+      },
+      "updated_at": {
+        "type": "TIMESTAMP",
+        "nullable": true
+      }
+    }
+  },
+  "santri_orangtua": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "santri_id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "nama": {
+        "type": "VARCHAR(150)",
+        "nullable": false
+      },
+      "nik": {
+        "type": "VARCHAR(16)",
+        "nullable": true
+      },
+      "hubungan": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "pendidikan": {
+        "type": "VARCHAR(50)",
+        "nullable": true
+      },
+      "pekerjaan": {
+        "type": "VARCHAR(100)",
+        "nullable": true
+      },
+      "pendapatan_bulanan": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "status_hidup": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "kontak_telepon": {
+        "type": "VARCHAR(15)",
+        "nullable": true
+      }
+    }
+  },
+  "santri_pembiayaan": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "santri_id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "biaya_per_bulan": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "sumber_biaya": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "nama_donatur": {
+        "type": "VARCHAR(150)",
+        "nullable": true
+      },
+      "jenis_beasiswa": {
+        "type": "VARCHAR(100)",
+        "nullable": true
+      },
+      "status_pembayaran": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "tunggakan_bulan": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "keterangan": {
+        "type": "VARCHAR",
+        "nullable": true
+      }
+    }
+  },
+  "santri_pribadi": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "nama": {
+        "type": "VARCHAR(150)",
+        "nullable": false
+      },
+      "nik": {
+        "type": "VARCHAR(16)",
+        "nullable": true
+      },
+      "no_kk": {
+        "type": "VARCHAR(16)",
+        "nullable": true
+      },
+      "tempat_lahir": {
+        "type": "VARCHAR(100)",
+        "nullable": true
+      },
+      "tanggal_lahir": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "jenis_kelamin": {
+        "type": "VARCHAR",
+        "nullable": false
+      },
+      "status_tinggal": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "lama_mondok_tahun": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "provinsi": {
+        "type": "VARCHAR(100)",
+        "nullable": true
+      },
+      "kabupaten": {
+        "type": "VARCHAR(100)",
+        "nullable": true
+      },
+      "kecamatan": {
+        "type": "VARCHAR(100)",
+        "nullable": true
+      },
+      "desa": {
+        "type": "VARCHAR(100)",
+        "nullable": true
+      },
+      "lokasi": {
+        "type": "NULL",
+        "nullable": true
+      },
+      "pesantren_id": {
+        "type": "UUID",
+        "nullable": true
+      }
+    }
+  },
+  "santri_rumah": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "santri_id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "status_rumah": {
+        "type": "VARCHAR",
+        "nullable": false
+      },
+      "jenis_lantai": {
+        "type": "VARCHAR",
+        "nullable": false
+      },
+      "jenis_dinding": {
+        "type": "VARCHAR",
+        "nullable": false
+      },
+      "jenis_atap": {
+        "type": "VARCHAR",
+        "nullable": false
+      },
+      "akses_air_bersih": {
+        "type": "VARCHAR",
+        "nullable": false
+      },
+      "daya_listrik_va": {
+        "type": "VARCHAR",
+        "nullable": true
+      }
+    }
+  },
+  "santri_skor": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "santri_id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "skor_ekonomi": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "skor_rumah": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "skor_aset": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "skor_pembiayaan": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "skor_kesehatan": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "skor_bansos": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "skor_total": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "kategori_kemiskinan": {
+        "type": "VARCHAR(30)",
+        "nullable": false
+      },
+      "metode": {
+        "type": "VARCHAR(50)",
+        "nullable": false
+      },
+      "version": {
+        "type": "VARCHAR(20)",
+        "nullable": false
+      },
+      "calculated_at": {
+        "type": "TIMESTAMP",
+        "nullable": true
+      }
+    }
+  },
+  "spatial_ref_sys": {
+    "columns": {
+      "srid": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "auth_name": {
+        "type": "VARCHAR(256)",
+        "nullable": true
+      },
+      "auth_srid": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "srtext": {
+        "type": "VARCHAR(2048)",
+        "nullable": true
+      },
+      "proj4text": {
+        "type": "VARCHAR(2048)",
+        "nullable": true
+      }
+    }
+  },
+  "topology": {
+    "columns": {
+      "id": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "name": {
+        "type": "VARCHAR",
+        "nullable": false
+      },
+      "srid": {
+        "type": "INTEGER",
+        "nullable": false
+      },
+      "precision": {
+        "type": "DOUBLE PRECISION",
+        "nullable": false
+      },
+      "hasz": {
+        "type": "BOOLEAN",
+        "nullable": false
+      },
+      "useslargeids": {
+        "type": "BOOLEAN",
+        "nullable": false
+      }
+    }
+  },
+  "users": {
+    "columns": {
+      "id": {
+        "type": "UUID",
+        "nullable": false
+      },
+      "email": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "password": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "role": {
+        "type": "VARCHAR",
+        "nullable": true
+      }
+    }
+  }
+}

@@ -40,10 +40,12 @@ def get_santri_points(
         for record in records:
             # Extract coordinates
             result = db.execute(
-                text(f"SELECT ST_X(lokasi) as lon, ST_Y(lokasi) as lat FROM santri_map WHERE id = '{record.id}'")
+                text("SELECT ST_X(lokasi) as lon, ST_Y(lokasi) as lat FROM santri_map WHERE id = :id"),
+                {"id": record.id}
             ).first()
             
             if result:
+                pesantren_id_val = getattr(record, "pesantren_id", None)
                 points.append({
                     "id": str(record.id),
                     "name": record.nama,
@@ -51,7 +53,7 @@ def get_santri_points(
                     "lon": result.lon,
                     "category": record.kategori_kemiskinan,
                     "score": record.skor_terakhir,
-                    "pesantren_id": str(record.pesantren_id) if record.pesantren_id else None
+                    "pesantren_id": str(pesantren_id_val) if pesantren_id_val is not None else None
                 })
         
         # Build valid GeoJSON FeatureCollection
@@ -111,7 +113,8 @@ def get_pesantren_points(
         for record in records:
             # Extract coordinates
             result = db.execute(
-                text(f"SELECT ST_X(lokasi) as lon, ST_Y(lokasi) as lat FROM pesantren_map WHERE id = '{record.id}'")
+                text("SELECT ST_X(lokasi) as lon, ST_Y(lokasi) as lat FROM pesantren_map WHERE id = :id"),
+                {"id": record.id}
             ).first()
             
             if result:
@@ -191,12 +194,18 @@ def get_santri_heatmap(
         points = []
         for record in records:
             result = db.execute(
-                text(f"SELECT ST_X(lokasi) as lon, ST_Y(lokasi) as lat FROM santri_map WHERE id = '{record.id}'")
+                text("SELECT ST_X(lokasi) as lon, ST_Y(lokasi) as lat FROM santri_map WHERE id = :id"),
+                {"id": record.id}
             ).first()
             
             if result:
+                raw_score = getattr(record, "skor_terakhir", None)
+                score_val = float(raw_score) if isinstance(raw_score, (int, float)) else 0.0
+                raw_category = getattr(record, "kategori_kemiskinan", None)
+                kategori_val = raw_category if isinstance(raw_category, str) else ""
                 # Intensity = normalized score (0-100) + category weight
-                intensity = (record.skor_terakhir / 100.0) * category_weight.get(record.kategori_kemiskinan, 0.5)
+                intensity_raw = (score_val / 100.0) * category_weight.get(kategori_val, 0.5)
+                intensity = min(intensity_raw, 1.0)
                 
                 points.append({
                     "lat": result.lat,
@@ -266,12 +275,18 @@ def get_pesantren_heatmap(
         points = []
         for record in records:
             result = db.execute(
-                text(f"SELECT ST_X(lokasi) as lon, ST_Y(lokasi) as lat FROM pesantren_map WHERE id = '{record.id}'")
+                text("SELECT ST_X(lokasi) as lon, ST_Y(lokasi) as lat FROM pesantren_map WHERE id = :id"),
+                {"id": record.id}
             ).first()
             
             if result:
+                raw_score = getattr(record, "skor_terakhir", None)
+                score_val = float(raw_score) if isinstance(raw_score, (int, float)) else 0.0
+                raw_category = getattr(record, "kategori_kelayakan", None)
+                kategori_val = raw_category if isinstance(raw_category, str) else ""
                 # Intensity = normalized score (0-100) + category weight
-                intensity = (record.skor_terakhir / 100.0) * category_weight.get(record.kategori_kelayakan, 0.5)
+                intensity_raw = (score_val / 100.0) * category_weight.get(kategori_val, 0.5)
+                intensity = min(intensity_raw, 1.0)
                 
                 points.append({
                     "lat": result.lat,
