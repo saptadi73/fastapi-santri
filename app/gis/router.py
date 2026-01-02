@@ -159,13 +159,13 @@ def heatmap(
     rows = db.execute(text(sql), params).fetchall()
 
     return [
-        {{
+        {
             "lat": r.lat,
             "lng": r.lng,
             "weight": r.weight,
             "kategori": r.kategori_kemiskinan,
             "skor": r.skor_terakhir
-        }}
+        }
         for r in rows
     ]
 
