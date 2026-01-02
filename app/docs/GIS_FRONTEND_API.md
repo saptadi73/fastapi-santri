@@ -184,38 +184,37 @@ async function loadPesantrenPoints() {
 
 ### 3. GET /gis/heatmap
 
-Get santri heatmap data for density visualization.
+Get santri heatmap data with intensity based on poverty score.
 
 **Parameters:**
-- `kategori` (optional): Filter by poverty category
+- `kategori` (optional): Filter by poverty category (e.g., "Sangat Miskin", "Miskin", "Rentan", "Tidak Miskin")
 
-**Response (Valid GeoJSON with heatmap properties):**
+**Response:**
 ```json
-{
-  "success": true,
-  "message": "Generated heatmap with 1 santri points",
-  "data": {
-    "type": "FeatureCollection",
-    "features": [
-      {
-        "type": "Feature",
-        "geometry": {
-          "type": "Point",
-          "coordinates": [106.994906, -6.160694]
-        },
-        "properties": {
-          "intensity": 0.0125,
-          "value": 5,
-          "category": "Tidak Miskin"
-        }
-      }
-    ],
-    "total": 1,
-    "intensity_min": 0,
-    "intensity_max": 1.0
+[
+  {
+    "lat": -6.160694,
+    "lng": 106.994906,
+    "weight": 75,
+    "ekonomi": "Miskin",
+    "skor": 75
+  },
+  {
+    "lat": -6.136717,
+    "lng": 106.998937,
+    "weight": 45,
+    "ekonomi": "Rentan",
+    "skor": 45
   }
-}
+]
 ```
+
+**Response Fields:**
+- `lat`: Latitude coordinate
+- `lng`: Longitude coordinate  
+- `weight`: Intensity value (0-100) based on score - used for heatmap visualization
+- `ekonomi`: Poverty category (Sangat Miskin, Miskin, Rentan, Tidak Miskin)
+- `skor`: Santri poverty score (0-100)
 
 **Frontend Usage (Leaflet.heat):**
 ```javascript
@@ -223,11 +222,11 @@ async function loadSantriHeatmap() {
   const res = await fetch('/gis/heatmap');
   const data = await res.json();
   
-  // Convert GeoJSON features to [lat, lon, intensity] for Leaflet.heat
-  const heatData = data.data.features.map(feature => [
-    feature.geometry.coordinates[1],  // latitude
-    feature.geometry.coordinates[0],  // longitude
-    feature.properties.intensity      // intensity weight
+  // Convert to [lat, lon, intensity] format for Leaflet.heat
+  const heatData = data.map(point => [
+    point.lat,
+    point.lng,
+    point.weight / 100  // Normalize to 0-1 range
   ]);
   
   L.heatLayer(heatData, {
@@ -235,11 +234,11 @@ async function loadSantriHeatmap() {
     blur: 15,
     maxZoom: 17,
     gradient: {
-      0.0: '#38006b',
-      0.25: '#0064ff',
-      0.5: '#00b4ff',
-      0.75: '#ffff00',
-      1.0: '#ff0000'
+      0.0: '#38006b',      // Purple - Low poverty
+      0.25: '#0064ff',     // Blue
+      0.5: '#00b4ff',      // Cyan
+      0.75: '#ffff00',     // Yellow
+      1.0: '#ff0000'       // Red - High poverty
     }
   }).addTo(map);
 }
@@ -249,40 +248,37 @@ async function loadSantriHeatmap() {
 
 ### 4. GET /gis/pesantren-heatmap
 
-Get pesantren heatmap data for quality/density visualization.
+Get pesantren heatmap data with intensity based on quality/layak score.
 
 **Parameters:**
-- `kategori` (optional): Filter by quality category
+- None
 
-**Response (Valid GeoJSON with heatmap properties):**
+**Response:**
 ```json
-{
-  "success": true,
-  "message": "Generated heatmap with 1 pesantren points",
-  "data": {
-    "type": "FeatureCollection",
-    "features": [
-      {
-        "type": "Feature",
-        "geometry": {
-          "type": "Point",
-          "coordinates": [106.926292, -6.265486]
-        },
-        "properties": {
-          "intensity": 0.94,
-          "value": 94,
-          "category": "sangat_layak",
-          "name": "Mahasina",
-          "province": "Jawa Barat"
-        }
-      }
-    ],
-    "total": 1,
-    "intensity_min": 0,
-    "intensity_max": 1.0
+[
+  {
+    "lat": -6.265486,
+    "lng": 106.926292,
+    "weight": 85,
+    "kategori": "Layak",
+    "skor": 85
+  },
+  {
+    "lat": -6.245123,
+    "lng": 106.935678,
+    "weight": 60,
+    "kategori": "Cukup Layak",
+    "skor": 60
   }
-}
+]
 ```
+
+**Response Fields:**
+- `lat`: Latitude coordinate
+- `lng`: Longitude coordinate
+- `weight`: Intensity value (0-100) based on score - used for heatmap visualization
+- `kategori`: Quality category
+- `skor`: Pesantren quality/layak score (0-100)
 
 **Frontend Usage (Leaflet.heat):**
 ```javascript
@@ -290,25 +286,37 @@ async function loadPesantrenHeatmap() {
   const res = await fetch('/gis/pesantren-heatmap');
   const data = await res.json();
   
-  // Convert GeoJSON features to [lat, lon, intensity] for Leaflet.heat
-  const heatData = data.data.features.map(feature => [
-    feature.geometry.coordinates[1],  // latitude
-    feature.geometry.coordinates[0],  // longitude
-    feature.properties.intensity      // intensity weight
+  // Convert to [lat, lon, intensity] format for Leaflet.heat
+  const heatData = data.map(point => [
+    point.lat,
+    point.lng,
+    point.weight / 100  // Normalize to 0-1 range
   ]);
   
   L.heatLayer(heatData, {
-    radius: 30,
-    blur: 20,
+    radius: 25,
+    blur: 15,
     maxZoom: 17,
     gradient: {
-      0.0: '#ff0000',
-      0.5: '#ffff00',
-      1.0: '#00ff00'
+      0.0: '#ffff00',      // Yellow - Low quality
+      0.5: '#00ff00',      // Green - Medium quality
+      1.0: '#0000ff'       // Blue - High quality
     }
   }).addTo(map);
 }
 ```
+
+---
+
+## Intensity Calculation
+
+**Santri Heatmap:**
+- Intensity/Weight = Poverty Score (0-100)
+- Higher score = Higher poverty = Warmer color (red)
+
+**Pesantren Heatmap:**
+- Intensity/Weight = Quality/Layak Score (0-100)
+- Higher score = Better quality = Cooler color (blue)
 
 ---
 
