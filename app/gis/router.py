@@ -47,14 +47,18 @@ def santri_points(
               'santri_id', sm.santri_id,
               'nama', sm.nama,
               'skor', sm.skor_terakhir,
-              'kategori', sm.kategori_kemiskinan,
-              'pesantren_id', sm.pesantren_id
+              'ekonomi', sm.kategori_kemiskinan,
+              'pesantren_id', sm.pesantren_id,
+              'provinsi', sp.provinsi,
+              'kabupaten', sp.kabupaten,
+              'kecamatan', sp.kecamatan
             )
           )
         ), '[]'::jsonb
       )
     )
     FROM santri_map sm
+    LEFT JOIN santri_pribadi sp ON sm.santri_id = sp.id
     WHERE {' AND '.join(where)};
     """
 
