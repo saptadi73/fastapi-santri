@@ -18,29 +18,21 @@ def _tbl(name: str) -> str:
 
 @router.get("/santri-points")
 def santri_points(
-    provinsi: str | None = None,
-    kabupaten: str | None = None,
-    kecamatan: str | None = None,
+    kategori: str | None = None,
+    pesantren_id: str | None = None,
     db: Session = Depends(get_db),
 ):
-    where = ["s.lokasi IS NOT NULL"]
-    joins = []
+    """Get santri locations with score and category info."""
+    where = ["sm.lokasi IS NOT NULL"]
     params: dict[str, str] = {}
 
-    if provinsi:
-        joins.append(f"JOIN {_tbl(PROV_TABLE)} p ON ST_Contains(p.geom, s.lokasi)")
-        where.append("p.name_1 = :provinsi")
-        params["provinsi"] = provinsi
+    if kategori:
+        where.append("sm.kategori_kemiskinan = :kategori")
+        params["kategori"] = kategori
 
-    if kabupaten:
-        joins.append(f"JOIN {_tbl(KAB_TABLE)} k ON ST_Contains(k.geom, s.lokasi)")
-        where.append("k.name_2 = :kabupaten")
-        params["kabupaten"] = kabupaten
-
-    if kecamatan:
-        joins.append(f"JOIN {_tbl(KEC_TABLE)} kc ON ST_Contains(kc.geom, s.lokasi)")
-        where.append("kc.name_3 = :kecamatan")
-        params["kecamatan"] = kecamatan
+    if pesantren_id:
+        where.append("sm.pesantren_id = :pesantren_id")
+        params["pesantren_id"] = pesantren_id
 
     sql = f"""
     SELECT jsonb_build_object(
@@ -49,20 +41,20 @@ def santri_points(
         jsonb_agg(
           jsonb_build_object(
             'type','Feature',
-            'geometry', ST_AsGeoJSON(s.lokasi)::jsonb,
+            'geometry', ST_AsGeoJSON(sm.lokasi)::jsonb,
             'properties', jsonb_build_object(
-              'id', s.id,
-              'nama', s.nama,
-              'provinsi', s.provinsi,
-              'kabupaten', s.kabupaten,
-              'kecamatan', s.kecamatan
+              'id', sm.id,
+              'santri_id', sm.santri_id,
+              'nama', sm.nama,
+              'skor', sm.skor_terakhir,
+              'kategori', sm.kategori_kemiskinan,
+              'pesantren_id', sm.pesantren_id
             )
           )
         ), '[]'::jsonb
       )
     )
-    FROM santri_pribadi s
-    {' '.join(joins)}
+    FROM santri_map sm
     WHERE {' AND '.join(where)};
     """
 
@@ -142,19 +134,38 @@ def pesantren_heatmap(db: Session = Depends(get_db)):
     ]
 
 @router.get("/heatmap")
-def heatmap(db: Session = Depends(get_db)):
-    sql = """
+def heatmap(
+    kategori: str | None = None,
+    db: Session = Depends(get_db),
+):
+    """Get santri heatmap with score-based intensity."""
+    where = ["sm.lokasi IS NOT NULL"]
+    params: dict[str, str] = {}
+
+    if kategori:
+        where.append("sm.kategori_kemiskinan = :kategori")
+        params["kategori"] = kategori
+
+    sql = f"""
     SELECT
-      ST_Y(lokasi) AS lat,
-      ST_X(lokasi) AS lng,
-      1 AS weight
-    FROM santri_pribadi
-    WHERE lokasi IS NOT NULL;
+      ST_Y(sm.lokasi) AS lat,
+      ST_X(sm.lokasi) AS lng,
+      COALESCE(sm.skor_terakhir, 50) AS weight,
+      sm.kategori_kemiskinan,
+      sm.skor_terakhir
+    FROM santri_map sm
+    WHERE {' AND '.join(where)};
     """
-    rows = db.execute(text(sql)).fetchall()
+    rows = db.execute(text(sql), params).fetchall()
 
     return [
-        {"lat": r.lat, "lng": r.lng, "weight": r.weight}
+        {{
+            "lat": r.lat,
+            "lng": r.lng,
+            "weight": r.weight,
+            "kategori": r.kategori_kemiskinan,
+            "skor": r.skor_terakhir
+        }}
         for r in rows
     ]
 
