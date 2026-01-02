@@ -94,7 +94,7 @@ def get_santri_by_bbox(
 
 
 @router.get("/statistics", response_model=None)
-def get_statistics(db: Session = Depends(get_db)):
+def get_santri_statistics(db: Session = Depends(get_db)):
     """
     Get statistics about santri map data.
     

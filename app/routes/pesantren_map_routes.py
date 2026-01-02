@@ -101,7 +101,7 @@ def get_pesantren_by_bbox(
 
 
 @router.get("/statistics", response_model=None)
-def get_statistics(db: Session = Depends(get_db)):
+def get_pesantren_statistics(db: Session = Depends(get_db)):
     """
     Get statistics about pesantren map data.
     
