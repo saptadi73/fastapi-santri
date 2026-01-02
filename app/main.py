@@ -8,8 +8,6 @@ from app.gis.router import router as gis_router
 from app.dashboard.router import router as dashboard_router
 from app.routes.santri_pribadi_routes import router as santri_pribadi_router
 from app.routes.santri_pribadi_alias_routes import router as santri_pribadi_alias_router
-
-# Import models to ensure SQLAlchemy can find them
 from app.santri.models import Santri  # noqa: F401
 from app.models.pondok_pesantren import PondokPesantren  # noqa: F401
 from app.models.pesantren_fisik import PesantrenFisik  # noqa: F401
@@ -45,7 +43,6 @@ from app.routes.pesantren_pendidikan_routes import router as pesantren_pendidika
 from app.routes.pesantren_score_routes import router as pesantren_score_router
 from app.routes.santri_map_routes import router as santri_map_router
 from app.routes.pesantren_map_routes import router as pesantren_map_router
-from app.routes.gis_routes import router as gis_router
 from app.routes.nl2sql_routes import router as nl2sql_router
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -94,7 +91,6 @@ app.include_router(santri_map_router)
 app.include_router(pesantren_map_router)
 app.include_router(pesantren_pendidikan_router)
 app.include_router(pesantren_score_router)
-app.include_router(gis_router)
 app.include_router(nl2sql_router)
 
 @app.get("/")
