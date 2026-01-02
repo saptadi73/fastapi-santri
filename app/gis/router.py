@@ -122,18 +122,27 @@ def pesantren_points(
 
 @router.get("/pesantren-heatmap")
 def pesantren_heatmap(db: Session = Depends(get_db)):
+    """Get pesantren heatmap with score-based intensity."""
     sql = """
     SELECT
       ST_Y(lokasi) AS lat,
       ST_X(lokasi) AS lng,
-      COALESCE(skor_terakhir, 50) AS weight
+      COALESCE(skor_terakhir, 50) AS weight,
+      kategori_kelayakan AS kategori,
+      skor_terakhir AS skor
     FROM pesantren_map
     WHERE lokasi IS NOT NULL;
     """
     rows = db.execute(text(sql)).fetchall()
 
     return [
-        {"lat": r.lat, "lng": r.lng, "weight": r.weight}
+        {
+            "lat": r.lat,
+            "lng": r.lng,
+            "weight": r.weight,
+            "kategori": r.kategori,
+            "skor": r.skor
+        }
         for r in rows
     ]
 
@@ -155,8 +164,8 @@ def heatmap(
       ST_Y(sm.lokasi) AS lat,
       ST_X(sm.lokasi) AS lng,
       COALESCE(sm.skor_terakhir, 50) AS weight,
-      sm.kategori_kemiskinan,
-      sm.skor_terakhir
+      sm.kategori_kemiskinan AS ekonomi,
+      sm.skor_terakhir AS skor
     FROM santri_map sm
     WHERE {' AND '.join(where)};
     """
@@ -167,8 +176,8 @@ def heatmap(
             "lat": r.lat,
             "lng": r.lng,
             "weight": r.weight,
-            "kategori": r.kategori_kemiskinan,
-            "skor": r.skor_terakhir
+            "ekonomi": r.ekonomi,
+            "skor": r.skor
         }
         for r in rows
     ]
