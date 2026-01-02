@@ -79,24 +79,17 @@ def pesantren_points(
     kecamatan: str | None = None,
     db: Session = Depends(get_db),
 ):
-    where = ["p.geom IS NOT NULL"]
+    where = ["pm.lokasi IS NOT NULL"]
     joins = []
     params: dict[str, str] = {}
 
     if provinsi:
-        joins.append(f"JOIN {_tbl(PROV_TABLE)} prov ON ST_Contains(prov.geom, p.geom)")
-        where.append("prov.name_1 = :provinsi")
+        where.append("pm.provinsi = :provinsi")
         params["provinsi"] = provinsi
 
     if kabupaten:
-        joins.append(f"JOIN {_tbl(KAB_TABLE)} k ON ST_Contains(k.geom, p.geom)")
-        where.append("k.name_2 = :kabupaten")
+        where.append("pm.kabupaten = :kabupaten")
         params["kabupaten"] = kabupaten
-
-    if kecamatan:
-        joins.append(f"JOIN {_tbl(KEC_TABLE)} kc ON ST_Contains(kc.geom, p.geom)")
-        where.append("kc.name_3 = :kecamatan")
-        params["kecamatan"] = kecamatan
 
     sql = f"""
     SELECT jsonb_build_object(
@@ -105,20 +98,23 @@ def pesantren_points(
         jsonb_agg(
           jsonb_build_object(
             'type','Feature',
-            'geometry', ST_AsGeoJSON(p.geom)::jsonb,
+            'geometry', ST_AsGeoJSON(pm.lokasi)::jsonb,
             'properties', jsonb_build_object(
-              'id', p.id,
-              'nama', p.nama,
-              'nsp', p.nsp,
-              'provinsi', p.provinsi,
-              'kabupaten', p.kabupaten,
-              'kecamatan', p.kecamatan
+              'id', pm.id,
+              'pesantren_id', pm.pesantren_id,
+              'nama', pm.nama,
+              'nsp', pm.nsp,
+              'provinsi', pm.provinsi,
+              'kabupaten', pm.kabupaten,
+              'skor', pm.skor_terakhir,
+              'kategori', pm.kategori_kelayakan,
+              'jumlah_santri', pm.jumlah_santri
             )
           )
         ), '[]'::jsonb
       )
     )
-    FROM pondok_pesantren p
+    FROM pesantren_map pm
     {' '.join(joins)}
     WHERE {' AND '.join(where)};
     """
@@ -132,11 +128,11 @@ def pesantren_points(
 def pesantren_heatmap(db: Session = Depends(get_db)):
     sql = """
     SELECT
-      ST_Y(geom) AS lat,
-      ST_X(geom) AS lng,
-      1 AS weight
-    FROM pondok_pesantren
-    WHERE geom IS NOT NULL;
+      ST_Y(lokasi) AS lat,
+      ST_X(lokasi) AS lng,
+      COALESCE(skor_terakhir, 50) AS weight
+    FROM pesantren_map
+    WHERE lokasi IS NOT NULL;
     """
     rows = db.execute(text(sql)).fetchall()
 
