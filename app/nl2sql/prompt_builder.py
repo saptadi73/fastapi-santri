@@ -88,7 +88,16 @@ Entity: {entity}
 
 Generate SELECT query untuk mengambil {limit} records dari {entity} table.
 Include semua relevant fields.
-Order by created_at DESC jika ada.
+Gunakan hanya kolom yang ada di schema_context.json.
+Jika butuh urutan terbaru: gunakan created_at DESC bila kolom tersebut ada;
+jika tidak ada created_at maka gunakan updated_at DESC; jika keduanya tidak ada,
+gunakan id DESC sebagai fallback aman.
+
+Jika query memunculkan id saja, tambahkan kolom yang bermakna manusia (nama/alamat/deskripsi)
+melalui JOIN ke tabel induk yang sesuai. Contoh:
+- pesantren_skor -> join pondok_pesantren untuk nama, alamat, kabupaten, provinsi
+- santri -> join santri_pribadi untuk nama dan lokasi/demografi
+Jaga LIMIT <= 1000.
 
 Generate SQL:"""
     
@@ -111,6 +120,11 @@ Entities: {', '.join(entities)}
 Generate SELECT query dengan WHERE clause yang sesuai.
 Gunakan proper table joins jika perlu.
 LIMIT 1000.
+
+Jika hasil berisi id, sertakan kolom nama/alamat/deskripsi dengan JOIN ke tabel induk:
+- pesantren_skor -> join pondok_pesantren untuk nama, alamat, kabupaten, provinsi
+- santri -> join santri_pribadi untuk nama dan informasi lokasi/demografi
+Tetap gunakan kolom yang ada di schema_context.json.
 
 Generate SQL:"""
     

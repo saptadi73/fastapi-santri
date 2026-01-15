@@ -237,8 +237,8 @@
         "type": "TIMESTAMP",
         "nullable": true
       },
-      "metode_pembayaran": {
-        "type": "VARCHAR",
+      "Unnamed: 19": {
+        "type": "VARCHAR(50)",
         "nullable": true
       }
     }
@@ -335,6 +335,10 @@
       },
       "updated_at": {
         "type": "TIMESTAMP",
+        "nullable": true
+      },
+      "column10": {
+        "type": "VARCHAR(50)",
         "nullable": true
       }
     }
@@ -485,7 +489,7 @@
         "type": "UUID",
         "nullable": false
       },
-      "skor_kelayakan_fisik": {
+      "skor_fisik": {
         "type": "INTEGER",
         "nullable": false
       },
@@ -519,6 +523,14 @@
       },
       "calculated_at": {
         "type": "TIMESTAMP",
+        "nullable": true
+      },
+      "skor_fasilitas": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "skor_pendidikan": {
+        "type": "INTEGER",
         "nullable": true
       }
     }
@@ -604,6 +616,10 @@
       "foto_path": {
         "type": "VARCHAR(500)",
         "nullable": true
+      },
+      "kontak_telepon": {
+        "type": "VARCHAR(15)",
+        "nullable": true
       }
     }
   },
@@ -631,6 +647,10 @@
       },
       "lokasi": {
         "type": "NULL",
+        "nullable": true
+      },
+      "status": {
+        "type": "VARCHAR",
         "nullable": true
       }
     }
@@ -691,6 +711,10 @@
       },
       "bantuan_lainnya": {
         "type": "VARCHAR",
+        "nullable": true
+      },
+      "santri_id.1": {
+        "type": "VARCHAR(50)",
         "nullable": true
       }
     }
@@ -812,6 +836,62 @@
       "kontak_telepon": {
         "type": "VARCHAR(15)",
         "nullable": true
+      },
+      "pesantren_id": {
+        "type": "VARCHAR(50)",
+        "nullable": true
+      },
+      "no_kk": {
+        "type": "REAL",
+        "nullable": true
+      },
+      "tempat_lahir": {
+        "type": "VARCHAR(50)",
+        "nullable": true
+      },
+      "tanggal_lahir": {
+        "type": "VARCHAR(50)",
+        "nullable": true
+      },
+      "jenis_kelamin": {
+        "type": "VARCHAR(50)",
+        "nullable": true
+      },
+      "status_tinggal": {
+        "type": "VARCHAR(50)",
+        "nullable": true
+      },
+      "lama_mondok_tahun": {
+        "type": "INTEGER",
+        "nullable": true
+      },
+      "provinsi": {
+        "type": "VARCHAR(50)",
+        "nullable": true
+      },
+      "kabupaten": {
+        "type": "VARCHAR(50)",
+        "nullable": true
+      },
+      "kecamatan": {
+        "type": "VARCHAR(50)",
+        "nullable": true
+      },
+      "desa": {
+        "type": "VARCHAR(50)",
+        "nullable": true
+      },
+      "lokasi": {
+        "type": "VARCHAR(50)",
+        "nullable": true
+      },
+      "latitude": {
+        "type": "REAL",
+        "nullable": true
+      },
+      "longitude": {
+        "type": "REAL",
+        "nullable": true
       }
     }
   },
@@ -850,6 +930,10 @@
         "nullable": false
       },
       "keterangan": {
+        "type": "VARCHAR",
+        "nullable": true
+      },
+      "sumber_pembiayaan": {
         "type": "VARCHAR",
         "nullable": true
       }
@@ -915,6 +999,14 @@
       },
       "pesantren_id": {
         "type": "UUID",
+        "nullable": true
+      },
+      "latitude": {
+        "type": "DOUBLE PRECISION",
+        "nullable": true
+      },
+      "longitude": {
+        "type": "DOUBLE PRECISION",
         "nullable": true
       }
     }
@@ -1006,6 +1098,14 @@
         "nullable": false
       },
       "calculated_at": {
+        "type": "TIMESTAMP",
+        "nullable": true
+      },
+      "created_at": {
+        "type": "TIMESTAMP",
+        "nullable": true
+      },
+      "updated_at": {
         "type": "TIMESTAMP",
         "nullable": true
       }

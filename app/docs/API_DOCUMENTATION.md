@@ -6,6 +6,74 @@
 
 ---
 
+## Frontend Enum Reference (Pesantren & Santri)
+
+Use these as authoritative select options to avoid enum mismatch errors.
+
+**⚠️ IMPORTANT (Jan 15, 2026):** Enum values have been fixed to match database schema. If you recently imported/updated data with old values like `'Laki-laki'`, `'Mondok'`, `'tepat_waktu'`, `'sewa'`, `'marmer'`, `'batako'`, etc., please use the corrected values below. See "Bulk Recalculate Scores" section for re-scoring all data.
+
+```json
+{
+  "pesantren_fisik": {
+    "kondisi_bangunan": ["permanen", "semi_permanen", "non_permanen"],
+    "status_bangunan": ["milik_sendiri", "sewa", "pinjam", "hibah", "wakaf"],
+    "sanitasi": ["layak", "cukup", "tidak_layak"],
+    "air_bersih": ["lancar", "terbatas", "tidak_tersedia"],
+    "sumber_air": ["sumur", "PDAM", "sungai", "hujan", "berbagai_macam"],
+    "kualitas_air_bersih": ["asin", "layak_minum", "berbau", "keruh"],
+    "fasilitas_mck": ["lengkap", "kurang_lengkap", "cukup", "tidak_layak"],
+    "jenis_lantai": ["keramik", "marmer", "kayu", "beton", "tanah"],
+    "jenis_dinding": ["tembok", "kayu", "bambu", "anyaman", "papan"],
+    "jenis_atap": ["genteng_tanah_liat", "metal", "seng", "upvc", "asbes", "ijuk"],
+    "sumber_listrik": ["PLN", "genset", "listrik_tidak_ada", "tenaga_surya"],
+    "kestabilan_listrik": ["stabil", "tidak_stabil", "tidak_ada"],
+    "keamanan_bangunan": ["standar", "minim", "tidak_aman", "tinggi"]
+  },
+  "pesantren_pendidikan": {
+    "jenjang_pendidikan": ["semua_ra_ma", "pendidikan_dasar", "dasar_menengah_pertama", "dasar_menengah_atas", "satu_jenjang"],
+    "kurikulum": ["terstandar", "internal", "tidak_jelas"],
+    "akreditasi": ["a", "b", "c", "belum"],
+    "prestasi": ["nasional", "regional", "tidak_ada"],
+    "kategori_kelayakan": ["sangat_layak", "layak", "cukup_layak", "tidak_layak"]
+  },
+  "pesantren_fasilitas": {
+    "asrama": ["layak", "cukup", "tidak_layak"],
+    "ruang_belajar": ["layak", "cukup", "tidak_layak"],
+    "internet": ["stabil", "tidak_stabil", "tidak_ada"],
+    "fasilitas_transportasi": ["bus", "angkutan_umum", "kendaraan_pribadi", "ojek"],
+    "akses_jalan": ["aspal", "beton", "paving", "tanah", "bebatuan"]
+  },
+  "santri_pribadi": {
+    "jenis_kelamin": ["L", "P"],
+    "status_tinggal": ["mondok", "pp", "mukim"]
+  },
+  "santri_rumah": {
+    "status_rumah": ["milik_sendiri", "kontrak", "menumpang"],
+    "jenis_lantai": ["tanah", "semen", "keramik"],
+    "jenis_dinding": ["bambu", "kayu", "tembok"],
+    "jenis_atap": ["rumbia", "seng", "genteng", "beton"],
+    "akses_air_bersih": ["layak", "tidak_layak"],
+    "daya_listrik_va": ["450", "900", "1300", "2200", "3500", "5500"]
+  },
+  "santri_pembiayaan": {
+    "sumber_biaya": ["orang_tua", "wali", "donatur", "beasiswa"],
+    "status_pembayaran": ["lancar", "terlambat", "menunggak"]
+  },
+  "santri_orangtua": {
+    "hubungan": ["ayah", "ibu", "wali"],
+    "status_hidup": ["hidup", "meninggal"]
+  },
+  "santri_kesehatan": {
+    "status_gizi": ["baik", "kurang", "lebih"]
+  },
+  "santri_asset": {
+    "jenis_aset": ["motor", "mobil", "sepeda", "hp", "laptop", "lahan", "ternak", "alat_kerja", "lainnya"]
+  }
+}
+```
+
+---
+
 ### Create Asset
 Create a single asset with optional photos (multipart/form-data).
 
@@ -2058,6 +2126,7 @@ This system has two separate scoring modules:
 - ✅ Can be **re-calculated** anytime when data changes
 - ✅ Frontend can **display historical scores** from database
 - ✅ No need to recalculate all records when updating one santri/pesantren
+- ✅ **Enum consistency:** gunakan daftar pada “Frontend Enum Reference” di atas. Pesantren scoring memakai enum fisik/pendidikan (mis. `kondisi_bangunan`, `status_bangunan`, `sumber_air`, `jenjang_pendidikan`, `akreditasi`, dll) dan harus sama persis (underscore + case sesuai).
 
 **Recent Updates (v1.0.0 - January 2026):**
 - ✅ Fixed `status_pembayaran` mapping - now properly scored in pembiayaan dimension
@@ -2300,6 +2369,14 @@ breakdown.dimensi.forEach(dim => {
 
 ### Batch Calculate All Santri
 Calculate scores for all santri at once.
+
+**📌 Use When:**
+- ✅ After importing/updating bulk santri data
+- ✅ After enum value corrections (like the Jan 15 fix)
+- ✅ After modifying scoring rules
+- ✅ Initial database setup with dummy data
+
+**⚠️ Note:** This will recalculate all 400+ santri scores (~20-30 seconds). Use `python bulk_scoring.py` script for easy execution.
 
 ```
 POST /api/scoring/batch/calculate-all
@@ -2874,6 +2951,47 @@ POST /pesantren-fisik
 - `daya_listrik_va` (string, contoh: "450", "900", "1300", "2200", "3500", "5500")
 - `kestabilan_listrik` (stabil/tidak_stabil/tidak_ada)
 
+**Payload Example (frontend reference):**
+```json
+{
+  "pesantren_id": "uuid-pesantren",
+  "luas_tanah": 5000.0,
+  "luas_bangunan": 3000.0,
+  "kondisi_bangunan": "permanen",
+  "status_bangunan": "milik_sendiri",
+  "rasio_kepadatan_kamar": 3.2,
+  "sanitasi": "layak",
+  "air_bersih": "lancar",
+  "sumber_air": "PDAM",
+  "kualitas_air_bersih": "layak_minum",
+  "fasilitas_mck": "lengkap",
+  "jumlah_mck": 10,
+  "keamanan_bangunan": "standar",
+  "sistem_keamanan": "CCTV dan satpam 24 jam",
+  "jenis_lantai": "keramik",
+  "jenis_dinding": "tembok",
+  "jenis_atap": "genteng_tanah_liat",
+  "sumber_listrik": "PLN",
+  "daya_listrik_va": "2200",
+  "kestabilan_listrik": "stabil"
+}
+```
+
+**Allowed Enum Options (authoritative):**
+- `kondisi_bangunan`: permanen, semi_permanen, non_permanen
+- `status_bangunan`: milik_sendiri, sewa, pinjam, hibah, wakaf
+- `sanitasi`: layak, cukup, tidak_layak
+- `air_bersih`: lancar, terbatas, tidak_tersedia
+- `sumber_air`: sumur, PDAM, sungai, hujan, berbagai_macam
+- `kualitas_air_bersih`: asin, layak_minum, berbau, keruh
+- `fasilitas_mck`: lengkap, kurang_lengkap, cukup, tidak_layak
+- `jenis_lantai`: keramik, marmer, kayu, beton, tanah
+- `jenis_dinding`: tembok, kayu, bambu, anyaman, papan
+- `jenis_atap`: genteng_tanah_liat, metal, seng, upvc, asbes, ijuk
+- `sumber_listrik`: PLN, genset, listrik_tidak_ada, tenaga_surya
+- `kestabilan_listrik`: stabil, tidak_stabil, tidak_ada
+- `keamanan_bangunan`: standar, minim, tidak_aman, tinggi
+
 **Response (201 Created):** Same as detail response
 
 **Note:** Only one fisik record per pesantren is allowed.
@@ -2899,6 +3017,8 @@ DELETE /pesantren-fisik/{fisik_id}
 ## Pesantren Fasilitas (Facilities)
 
 **Note:** This module focuses on educational and support facilities. Infrastructure-related facilities like MCK, water, and electricity are managed in `/pesantren-fisik`. Payment methods are managed in `/pesantren-pendidikan`.
+
+**Important:** All enum fields (`asrama`, `ruang_belajar`, `internet`, `fasilitas_transportasi`, `akses_jalan`) must use the exact string values defined in the Frontend Enum Reference section above. Numeric values are not allowed and will cause errors.
 
 ### Get Fasilitas by Pesantren ID
 ```
@@ -3473,6 +3593,14 @@ GET /api/pesantren-scoring/{skor_id}
 
 ### Batch Calculate All Scores
 Calculate scores for all pesantren in the system.
+
+**📌 Use When:**
+- ✅ After importing/updating bulk pesantren data
+- ✅ After enum value corrections
+- ✅ After modifying scoring rules
+- ✅ Initial database setup with dummy data
+
+**⚠️ Note:** This will recalculate all 400+ pesantren scores (~15-20 seconds). Use `python bulk_scoring.py` script for easy execution.
 
 ```
 POST /api/pesantren-scoring/batch/calculate-all

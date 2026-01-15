@@ -1,236 +1,384 @@
 {
-  "database": "PostgreSQL + PostGIS",
-  "rules": [
-    "Gunakan hanya SELECT (tidak boleh UPDATE/INSERT/DELETE)",
-    "Selalu gunakan LIMIT <= 1000",
-    "Gunakan ST_DWithin untuk query radius (meter)",
-    "Gunakan ST_Intersects untuk query polygon/area",
-    "Untuk geometry: gunakan ST_Distance, ST_Within, ST_Contains",
-    "Jangan gunakan tabel di luar schema ini",
-    "Format tanggal: YYYY-MM-DD"
-  ],
-  "tables": {
-    "pondok_pesantren": {
-      "description": "Data utama pondok pesantren",
-      "columns": {
-        "id": "UUID primary key",
-        "nama": "String - nama pesantren",
-        "nsp": "String - nomor statistik pesantren (unique)",
-        "alamat": "String - alamat lengkap",
-        "provinsi": "String - nama provinsi",
-        "kabupaten": "String - nama kabupaten",
-        "kecamatan": "String - nama kecamatan",
-        "desa": "String - nama desa",
-        "kontak_telepon": "String - nomor telepon pesantren",
-        "email": "String - email pesantren",
-        "jumlah_santri": "Integer - total santri aktif"
-      }
-    },
-
-    "pesantren_map": {
-      "description": "Data spasial lokasi pesantren untuk GIS mapping",
-      "columns": {
-        "id": "UUID primary key",
-        "pesantren_id": "UUID FK ke pondok_pesantren.id",
-        "nama": "Nama pesantren",
-        "nsp": "Nomor statistik pesantren",
-        "lokasi": "Geometry POINT (SRID 4326) - koordinat lat/lon",
-        "skor_terakhir": "Integer (0-100) - skor kelayakan terbaru",
-        "kategori_kelayakan": "Enum: sangat_layak | layak | cukup_layak | tidak_layak",
-        "kabupaten": "Nama kabupaten",
-        "provinsi": "Nama provinsi",
-        "jumlah_santri": "Jumlah santri di pesantren"
-      }
-    },
-
-    "pesantren_fisik": {
-      "description": "Data kondisi fisik dan infrastruktur pesantren",
-      "columns": {
-        "id": "UUID primary key",
-        "pesantren_id": "UUID FK ke pondok_pesantren.id",
-        "luas_tanah": "Integer - luas tanah dalam meter persegi",
-        "luas_bangunan": "Integer - luas bangunan dalam meter persegi",
-        "kondisi_bangunan": "Enum: permanen | semi_permanen | non_permanen",
-        "rasio_kepadatan_kamar": "Float - rasio santri per kamar"
-      }
-    },
-
-    "pesantren_fasilitas": {
-      "description": "Fasilitas dan layanan yang dimiliki pesantren",
-      "columns": {
-        "id": "UUID primary key",
-        "pesantren_id": "UUID FK ke pondok_pesantren.id",
-        "jumlah_kamar": "Integer - jumlah kamar santri",
-        "jumlah_kamar_mandi": "Integer - jumlah kamar mandi",
-        "sumber_air": "Enum: lancar | terbatas | tidak_tersedia",
-        "fasilitas_kesehatan": "String - deskripsi fasilitas kesehatan"
-      }
-    },
-
-    "pesantren_pendidikan": {
-      "description": "Jenjang pendidikan yang diselenggarakan pesantren",
-      "columns": {
-        "id": "UUID primary key",
-        "pesantren_id": "UUID FK ke pondok_pesantren.id",
-        "jenjang_pendidikan": "String - jenjang (SD/SMP/SMA/lainnya)"
-      }
-    },
-
-    "pesantren_skor": {
-      "description": "Hasil penilaian kelayakan pesantren",
-      "columns": {
-        "id": "UUID primary key",
-        "pesantren_id": "UUID FK ke pondok_pesantren.id - unique",
-        "skor_fisik": "Integer - skor dimensi fisik",
-        "skor_fasilitas": "Integer - skor dimensi fasilitas",
-        "skor_pendidikan": "Integer - skor dimensi pendidikan",
-        "skor_total": "Integer (0-100) - total skor kelayakan pesantren",
-        "kategori_kelayakan": "Enum: sangat_layak | layak | cukup_layak | tidak_layak"
-      }
-    },
-
-    "santri": {
-      "description": "Relasi santri dengan pesantren",
-      "columns": {
-        "id": "UUID",
-        "pesantren_id": "FK ke pondok_pesantren.id",
-        "name": "Nama santri",
-        "status": "Status santri"
-      }
-    },
-
-    "santri_pribadi": {
-      "description": "Data pribadi santri dengan informasi lokasi dan pesantren",
-      "columns": {
-        "id": "UUID primary key",
-        "pesantren_id": "UUID FK ke pondok_pesantren.id - pesantren asal santri",
-        "nama": "String - nama lengkap santri (required)",
-        "nik": "String - nomor induk kependudukan 16 digit",
-        "no_kk": "String - nomor kartu keluarga",
-        "jenis_kelamin": "Enum: L | P",
-        "tempat_lahir": "String - kota/kabupaten tempat lahir",
-        "tanggal_lahir": "Date (YYYY-MM-DD)",
-        "status_tinggal": "Enum: mondok | pulang_pergi",
-        "lama_mondok_tahun": "Integer - lama mondok dalam tahun",
-        "provinsi": "String - provinsi asal santri",
-        "kabupaten": "String - kabupaten asal santri",
-        "kecamatan": "String - kecamatan asal santri",
-        "desa": "String - desa asal santri",
-        "latitude": "Float - koordinat lat rumah santri (optional)",
-        "longitude": "Float - koordinat lon rumah santri (optional)"
-      }
-    },
-
-    "santri_map": {
-      "description": "Lokasi tempat tinggal santri untuk GIS mapping",
-      "columns": {
-        "id": "UUID primary key",
-        "santri_id": "UUID FK ke santri_pribadi.id - unique",
-        "pesantren_id": "UUID FK ke pondok_pesantren.id",
-        "nama": "String - nama santri",
-        "lokasi": "Geometry POINT (SRID 4326) - koordinat rumah santri",
-        "skor_terakhir": "Integer (0-100) - skor kemiskinan terbaru",
-        "kategori_kemiskinan": "Enum: Sangat Miskin | Miskin | Rentan | Tidak Miskin"
-      }
-    },
-
-    "santri_orangtua": {
-      "description": "Data orang tua/wali santri untuk penilaian ekonomi",
-      "columns": {
-        "id": "UUID primary key",
-        "santri_id": "UUID FK ke santri_pribadi.id",
-        "nama": "String - nama lengkap orang tua/wali",
-        "hubungan": "Enum: ayah | ibu | wali - hubungan dengan santri",
-        "nik": "String - nomor induk kependudukan",
-        "pendidikan": "String - tingkat pendidikan (SD/SMP/SMA/Diploma/S1/lainnya)",
-        "pekerjaan": "String - jenis pekerjaan (contoh: petani, buruh, wiraswasta, PNS)",
-        "pendapatan_bulanan": "Integer - penghasilan per bulan dalam rupiah",
-        "status_hidup": "Enum: hidup | meninggal",
-        "kontak_telepon": "String - nomor telepon orang tua"
-      }
-    },
-
-    "santri_rumah": {
-      "description": "Data kondisi rumah/tempat tinggal santri",
-      "columns": {
-        "id": "UUID primary key",
-        "santri_id": "UUID FK ke santri_pribadi.id - unique",
-        "status_rumah": "Enum: milik_sendiri | kontrak | menumpang",
-        "jenis_lantai": "Enum: tanah | semen | keramik",
-        "jenis_dinding": "Enum: bambu | kayu | tembok",
-        "jenis_atap": "Enum: rumbia | seng | genteng | beton",
-        "akses_air_bersih": "Enum: layak | tidak_layak",
-        "daya_listrik_va": "Integer - Enum: 450 | 900 | 1300 | 2200 | 3500 | 5500 (VA)"
-      }
-    },
-
-    "santri_kesehatan": {
-      "description": "Data kondisi kesehatan dan gizi santri",
-      "columns": {
-        "id": "UUID primary key",
-        "santri_id": "UUID FK ke santri_pribadi.id - unique",
-        "tinggi_badan": "Integer - tinggi dalam cm",
-        "berat_badan": "Integer - berat dalam kg",
-        "status_gizi": "String - status gizi (baik/kurang/buruk)",
-        "riwayat_penyakit": "Text - catatan riwayat penyakit kronis/serius",
-        "kebutuhan_khusus": "String - kebutuhan kesehatan khusus (jika ada)"
-      }
-    },
-
-    "santri_pembiayaan": {
-      "description": "Data biaya dan sumber pembiayaan pendidikan santri",
-      "columns": {
-        "id": "UUID primary key",
-        "santri_id": "UUID FK ke santri_pribadi.id",
-        "biaya_per_bulan": "Integer - biaya pendidikan bulanan dalam rupiah",
-        "sumber_pembiayaan": "Enum: orang_tua | pesantren | beasiswa | donatur",
-        "status_pembayaran": "Enum: lunas | terlambat | menunggak",
-        "tunggakan_bulan": "Integer - jumlah bulan tunggakan",
-        "keterangan": "Text - catatan tambahan mengenai pembayaran"
-      }
-    },
-
-    "santri_bansos": {
-      "description": "Program bantuan sosial yang diterima santri",
-      "columns": {
-        "id": "UUID primary key",
-        "santri_id": "UUID FK ke santri_pribadi.id - unique",
-        "pkh": "Boolean - Program Keluarga Harapan",
-        "bpnt": "Boolean - Bantuan Pangan Non Tunai",
-        "pip": "Boolean - Program Indonesia Pintar",
-        "kis_pbi": "Boolean - Kartu Indonesia Sehat / PBI",
-        "blt_desa": "Boolean - Bantuan Langsung Tunai dari Desa",
-        "bantuan_lainnya": "Text - bantuan sosial lainnya yang diterima"
-      }
-    },
-
-    "santri_asset": {
-      "description": "Aset/barang berharga yang dimiliki keluarga santri",
-      "columns": {
-        "id": "UUID primary key",
-        "santri_id": "UUID FK ke santri_pribadi.id",
-        "jenis_aset": "Enum: motor | mobil | sepeda | hp | laptop | lahan | ternak | alat_kerja | lainnya",
-        "jumlah": "Integer - jumlah unit aset",
-        "nilai_perkiraan": "Integer - nilai perkiraan dalam rupiah"
-      }
-    },
-
-    "santri_skor": {
-      "description": "Hasil scoring tingkat kemiskinan santri (aggregate score)",
-      "columns": {
-        "id": "UUID primary key",
-        "santri_id": "UUID FK ke santri_pribadi.id - unique",
-        "skor_ekonomi": "Integer - skor dimensi ekonomi (orang tua)",
-        "skor_rumah": "Integer - skor dimensi kondisi rumah",
-        "skor_aset": "Integer - skor dimensi aset",
-        "skor_pembiayaan": "Integer - skor dimensi pembiayaan",
-        "skor_kesehatan": "Integer - skor dimensi kesehatan",
-        "skor_bansos": "Integer - skor dimensi bantuan sosial",
-        "skor_total": "Integer (0-100) - total score kemiskinan akhir",
-        "kategori_kemiskinan": "Enum: Sangat Miskin | Miskin | Rentan | Tidak Miskin",
-        "created_at": "Timestamp - waktu perhitungan",
-        "updated_at": "Timestamp - waktu pembaruan"
-      }
-    }
-  }
+    "database":  "PostgreSQL + PostGIS",
+    "generated_from":  "Database schema extraction",
+    "last_updated":  "2025-01-15",
+    "rules":  [
+                  "Gunakan hanya SELECT (tidak boleh UPDATE/INSERT/DELETE)",
+                  "Selalu gunakan LIMIT \u003c= 1000",
+                  "PENTING: Gunakan JOIN untuk mendapatkan detail lengkap (nama, alamat, dll), jangan hanya select ID",
+                  "Untuk santri dengan score: JOIN santri_skor dengan santri_pribadi ON santri_skor.santri_id = santri_pribadi.id",
+                  "Untuk pesantren dengan score: JOIN pesantren_skor dengan pondok_pesantren ON pesantren_skor.pesantren_id = pondok_pesantren.id",
+                  "Gunakan ST_DWithin untuk query radius (meter)",
+                  "Gunakan ST_Intersects untuk query polygon/area",
+                  "Untuk geometry: gunakan ST_Distance, ST_Within, ST_Contains",
+                  "Jangan gunakan tabel di luar schema ini",
+                  "Format tanggal: YYYY-MM-DD",
+                  "PENTING untuk PETA: Query santri harus SELECT latitude dan longitude dari santri_pribadi agar bisa ditampilkan di peta",
+                  "PENTING untuk PETA: Query pesantren harus JOIN dengan pesantren_map untuk mendapatkan lokasi geometry atau koordinat"
+              ],
+    "relationships":  {
+                          "santri_skor.santri_id":  "santri_pribadi.id (untuk mendapatkan nama, alamat, jenis_kelamin, dll)",
+                          "santri_map.santri_id":  "santri_pribadi.id (untuk mendapatkan detail santri)",
+                          "santri_pribadi.pesantren_id":  "pondok_pesantren.id (untuk mendapatkan nama pesantren)",
+                          "pesantren_map.pesantren_id":  "pondok_pesantren.id (untuk mendapatkan detail pesantren)",
+                          "pesantren_fisik.pesantren_id":  "pondok_pesantren.id",
+                          "pesantren_fasilitas.pesantren_id":  "pondok_pesantren.id",
+                          "pesantren_pendidikan.pesantren_id":  "pondok_pesantren.id",
+                          "pesantren_skor.pesantren_id":  "pondok_pesantren.id"
+                      },
+    "tables":  {
+                   "pondok_pesantren":  {
+                                            "description":  "Data utama pondok pesantren",
+                                            "columns":  {
+                                                            "id":  "UUID primary key",
+                                                            "nama":  "String - NOT NULL",
+                                                            "nsp":  "String",
+                                                            "alamat":  "String",
+                                                            "desa":  "String",
+                                                            "kecamatan":  "String",
+                                                            "kabupaten":  "String",
+                                                            "provinsi":  "String",
+                                                            "kode_pos":  "String",
+                                                            "lokasi":  "NULL",
+                                                            "telepon":  "String",
+                                                            "email":  "String",
+                                                            "website":  "String",
+                                                            "nama_kyai":  "String",
+                                                            "jumlah_santri":  "Integer",
+                                                            "jumlah_guru":  "Integer",
+                                                            "tahun_berdiri":  "Integer",
+                                                            "created_at":  "Timestamp",
+                                                            "updated_at":  "Timestamp",
+                                                            "foto_path":  "String",
+                                                            "kontak_telepon":  "String"
+                                                        }
+                                        },
+                   "pesantren_map":  {
+                                         "description":  "Data spasial lokasi pesantren untuk GIS mapping dengan lokasi geometri",
+                                         "columns":  {
+                                                         "id":  "UUID primary key",
+                                                         "pesantren_id":  "UUID FK ke pondok_pesantren.id - NOT NULL",
+                                                         "nama":  "String - NOT NULL",
+                                                         "nsp":  "String",
+                                                         "skor_terakhir":  "Integer - NOT NULL",
+                                                         "kategori_kelayakan":  "String - NOT NULL",
+                                                         "lokasi":  "NULL",
+                                                         "kabupaten":  "String",
+                                                         "provinsi":  "String",
+                                                         "jumlah_santri":  "Integer",
+                                                         "created_at":  "Timestamp",
+                                                         "updated_at":  "Timestamp"
+                                                     }
+                                     },
+                   "pesantren_fisik":  {
+                                           "description":  "Data kondisi fisik dan infrastruktur pesantren",
+                                           "columns":  {
+                                                           "id":  "UUID primary key",
+                                                           "pesantren_id":  "UUID FK ke pondok_pesantren.id - NOT NULL",
+                                                           "luas_tanah":  "Float",
+                                                           "luas_bangunan":  "Float",
+                                                           "status_bangunan":  "String",
+                                                           "kondisi_bangunan":  "String",
+                                                           "sumber_air":  "String",
+                                                           "kualitas_air_bersih":  "String",
+                                                           "fasilitas_mck":  "String",
+                                                           "jumlah_mck":  "Integer",
+                                                           "jenis_lantai":  "String",
+                                                           "jenis_dinding":  "String",
+                                                           "jenis_atap":  "String",
+                                                           "sumber_listrik":  "String",
+                                                           "daya_listrik_va":  "String",
+                                                           "kestabilan_listrik":  "String",
+                                                           "sistem_keamanan":  "String",
+                                                           "rasio_kepadatan_kamar":  "Float - NOT NULL",
+                                                           "sanitasi":  "String",
+                                                           "air_bersih":  "String",
+                                                           "keamanan_bangunan":  "String",
+                                                           "created_at":  "Timestamp",
+                                                           "updated_at":  "Timestamp",
+                                                           "column10":  "String"
+                                                       }
+                                       },
+                   "pesantren_fasilitas":  {
+                                               "description":  "Fasilitas dan layanan yang dimiliki pesantren",
+                                               "columns":  {
+                                                               "id":  "UUID primary key",
+                                                               "pesantren_id":  "UUID FK ke pondok_pesantren.id - NOT NULL",
+                                                               "jumlah_kamar":  "Integer",
+                                                               "jumlah_ruang_kelas":  "Integer",
+                                                               "jumlah_masjid":  "Integer",
+                                                               "perpustakaan":  "Boolean - NOT NULL",
+                                                               "laboratorium":  "Boolean - NOT NULL",
+                                                               "ruang_komputer":  "Boolean - NOT NULL",
+                                                               "fasilitas_olahraga":  "String",
+                                                               "fasilitas_kesehatan":  "String",
+                                                               "koperasi":  "Boolean - NOT NULL",
+                                                               "kantin":  "Boolean - NOT NULL",
+                                                               "fasilitas_mengajar":  "String",
+                                                               "fasilitas_komunikasi":  "String",
+                                                               "akses_transportasi":  "String",
+                                                               "akses_jalan":  "String",
+                                                               "jarak_ke_kota_km":  "Float",
+                                                               "asrama":  "String",
+                                                               "ruang_belajar":  "String",
+                                                               "internet":  "String",
+                                                               "fasilitas_transportasi":  "String",
+                                                               "created_at":  "Timestamp",
+                                                               "updated_at":  "Timestamp",
+                                                               "Unnamed: 19":  "String"
+                                                           }
+                                           },
+                   "pesantren_pendidikan":  {
+                                                "description":  "Jenjang pendidikan yang diselenggarakan pesantren",
+                                                "columns":  {
+                                                                "id":  "UUID primary key",
+                                                                "pesantren_id":  "UUID FK ke pondok_pesantren.id - NOT NULL",
+                                                                "jenjang_pendidikan":  "String",
+                                                                "kurikulum":  "String",
+                                                                "akreditasi":  "String",
+                                                                "jumlah_guru_tetap":  "Integer",
+                                                                "jumlah_guru_tidak_tetap":  "Integer",
+                                                                "guru_s1_keatas":  "Integer",
+                                                                "prestasi_akademik":  "String",
+                                                                "prestasi_non_akademik":  "String",
+                                                                "program_unggulan":  "String",
+                                                                "metode_pembayaran":  "String",
+                                                                "biaya_bulanan_min":  "Integer",
+                                                                "biaya_bulanan_max":  "Integer",
+                                                                "persen_guru_bersertifikat":  "Integer",
+                                                                "rasio_guru_santri":  "Float",
+                                                                "prestasi_santri":  "String",
+                                                                "fasilitas_mengajar":  "String",
+                                                                "created_at":  "Timestamp",
+                                                                "updated_at":  "Timestamp"
+                                                            }
+                                            },
+                   "pesantren_skor":  {
+                                          "description":  "Hasil penilaian kelayakan pesantren (scoring)",
+                                          "columns":  {
+                                                          "id":  "UUID primary key",
+                                                          "pesantren_id":  "UUID FK ke pondok_pesantren.id - NOT NULL",
+                                                          "skor_fisik":  "Integer - NOT NULL",
+                                                          "skor_air_sanitasi":  "Integer - NOT NULL",
+                                                          "skor_fasilitas_pendukung":  "Integer - NOT NULL",
+                                                          "skor_mutu_pendidikan":  "Integer - NOT NULL",
+                                                          "skor_total":  "Integer - NOT NULL",
+                                                          "kategori_kelayakan":  "String - NOT NULL",
+                                                          "metode":  "String - NOT NULL",
+                                                          "version":  "String - NOT NULL",
+                                                          "calculated_at":  "Timestamp",
+                                                          "skor_fasilitas":  "Integer",
+                                                          "skor_pendidikan":  "Integer"
+                                                      }
+                                      },
+                   "santri":  {
+                                  "description":  "Relasi santri dengan pesantren",
+                                  "columns":  {
+                                                  "id":  "UUID primary key",
+                                                  "pesantren_id":  "UUID FK ke pondok_pesantren.id - NOT NULL",
+                                                  "name":  "String - NOT NULL",
+                                                  "ekonomi":  "String",
+                                                  "score":  "Float",
+                                                  "lokasi":  "NULL",
+                                                  "status":  "String"
+                                              },
+                                  "notes":  "Tabel santri tidak memiliki kolom created_at/updated_at; gunakan id DESC untuk urutan terbaru"
+                              },
+                   "santri_pribadi":  {
+                                          "description":  "Data pribadi santri dengan informasi lokasi",
+                                          "columns":  {
+                                                          "id":  "UUID primary key",
+                                                          "nama":  "String - NOT NULL",
+                                                          "nik":  "String",
+                                                          "no_kk":  "String",
+                                                          "tempat_lahir":  "String",
+                                                          "tanggal_lahir":  "Date (YYYY-MM-DD)",
+                                                          "jenis_kelamin":  "String - NOT NULL",
+                                                          "status_tinggal":  "String",
+                                                          "lama_mondok_tahun":  "Integer",
+                                                          "provinsi":  "String",
+                                                          "kabupaten":  "String",
+                                                          "kecamatan":  "String",
+                                                          "desa":  "String",
+                                                          "lokasi":  "NULL",
+                                                          "pesantren_id":  "UUID FK ke pondok_pesantren.id",
+                                                          "latitude":  "Float",
+                                                          "longitude":  "Float"
+                                                      }
+                                      },
+                   "santri_map":  {
+                                      "description":  "Lokasi tempat tinggal santri untuk GIS mapping dengan geometri",
+                                      "columns":  {
+                                                      "id":  "UUID primary key",
+                                                      "santri_id":  "UUID FK ke santri_pribadi.id - NOT NULL",
+                                                      "nama":  "String - NOT NULL",
+                                                      "skor_terakhir":  "Integer - NOT NULL",
+                                                      "kategori_kemiskinan":  "String - NOT NULL",
+                                                      "lokasi":  "NULL",
+                                                      "pesantren_id":  "UUID FK ke pondok_pesantren.id",
+                                                      "created_at":  "Timestamp",
+                                                      "updated_at":  "Timestamp"
+                                                  }
+                                  },
+                   "santri_orangtua":  {
+                                           "description":  "Data orang tua/wali santri untuk penilaian ekonomi",
+                                           "columns":  {
+                                                           "id":  "UUID primary key",
+                                                           "santri_id":  "UUID FK ke santri_pribadi.id - NOT NULL",
+                                                           "nama":  "String - NOT NULL",
+                                                           "nik":  "String",
+                                                           "hubungan":  "String",
+                                                           "pendidikan":  "String",
+                                                           "pekerjaan":  "String",
+                                                           "pendapatan_bulanan":  "Integer",
+                                                           "status_hidup":  "String",
+                                                           "kontak_telepon":  "String",
+                                                           "pesantren_id":  "String",
+                                                           "no_kk":  "REAL",
+                                                           "tempat_lahir":  "String",
+                                                           "tanggal_lahir":  "String",
+                                                           "jenis_kelamin":  "String",
+                                                           "status_tinggal":  "String",
+                                                           "lama_mondok_tahun":  "Integer",
+                                                           "provinsi":  "String",
+                                                           "kabupaten":  "String",
+                                                           "kecamatan":  "String",
+                                                           "desa":  "String",
+                                                           "lokasi":  "String",
+                                                           "latitude":  "REAL",
+                                                           "longitude":  "REAL"
+                                                       }
+                                       },
+                   "santri_rumah":  {
+                                        "description":  "Data kondisi rumah/tempat tinggal santri",
+                                        "columns":  {
+                                                        "id":  "UUID primary key",
+                                                        "santri_id":  "UUID FK ke santri_pribadi.id - NOT NULL",
+                                                        "status_rumah":  "String - NOT NULL",
+                                                        "jenis_lantai":  "String - NOT NULL",
+                                                        "jenis_dinding":  "String - NOT NULL",
+                                                        "jenis_atap":  "String - NOT NULL",
+                                                        "akses_air_bersih":  "String - NOT NULL",
+                                                        "daya_listrik_va":  "String"
+                                                    }
+                                    },
+                   "santri_kesehatan":  {
+                                            "description":  "Data kondisi kesehatan dan gizi santri",
+                                            "columns":  {
+                                                            "id":  "UUID primary key",
+                                                            "santri_id":  "UUID FK ke santri_pribadi.id - NOT NULL",
+                                                            "tinggi_badan":  "Float",
+                                                            "berat_badan":  "Float",
+                                                            "status_gizi":  "String",
+                                                            "riwayat_penyakit":  "String",
+                                                            "alergi_obat":  "String",
+                                                            "kebutuhan_khusus":  "String"
+                                                        }
+                                        },
+                   "santri_pembiayaan":  {
+                                             "description":  "Data biaya dan sumber pembiayaan pendidikan santri",
+                                             "columns":  {
+                                                             "id":  "UUID primary key",
+                                                             "santri_id":  "UUID FK ke santri_pribadi.id - NOT NULL",
+                                                             "biaya_per_bulan":  "Integer",
+                                                             "sumber_biaya":  "String",
+                                                             "nama_donatur":  "String",
+                                                             "jenis_beasiswa":  "String",
+                                                             "status_pembayaran":  "String",
+                                                             "tunggakan_bulan":  "Integer - NOT NULL",
+                                                             "keterangan":  "String",
+                                                             "sumber_pembiayaan":  "String"
+                                                         }
+                                         },
+                   "santri_bansos":  {
+                                         "description":  "Program bantuan sosial yang diterima santri",
+                                         "columns":  {
+                                                         "id":  "UUID primary key",
+                                                         "santri_id":  "UUID FK ke santri_pribadi.id - NOT NULL",
+                                                         "pkh":  "Boolean - NOT NULL",
+                                                         "bpnt":  "Boolean - NOT NULL",
+                                                         "pip":  "Boolean - NOT NULL",
+                                                         "kis_pbi":  "Boolean - NOT NULL",
+                                                         "blt_desa":  "Boolean - NOT NULL",
+                                                         "bantuan_lainnya":  "String",
+                                                         "santri_id.1":  "String"
+                                                     }
+                                     },
+                   "santri_asset":  {
+                                        "description":  "Aset/barang berharga yang dimiliki keluarga santri",
+                                        "columns":  {
+                                                        "id":  "UUID primary key",
+                                                        "santri_id":  "UUID FK ke santri_pribadi.id - NOT NULL",
+                                                        "jenis_aset":  "String - NOT NULL",
+                                                        "jumlah":  "Integer - NOT NULL",
+                                                        "nilai_perkiraan":  "Integer"
+                                                    }
+                                    },
+                   "santri_skor":  {
+                                       "description":  "Hasil scoring tingkat kemiskinan santri (aggregate score)",
+                                       "columns":  {
+                                                       "id":  "UUID primary key",
+                                                       "santri_id":  "UUID FK ke santri_pribadi.id - NOT NULL",
+                                                       "skor_ekonomi":  "Integer - NOT NULL",
+                                                       "skor_rumah":  "Integer - NOT NULL",
+                                                       "skor_aset":  "Integer - NOT NULL",
+                                                       "skor_pembiayaan":  "Integer - NOT NULL",
+                                                       "skor_kesehatan":  "Integer - NOT NULL",
+                                                       "skor_bansos":  "Integer - NOT NULL",
+                                                       "skor_total":  "Integer - NOT NULL",
+                                                       "kategori_kemiskinan":  "String - NOT NULL",
+                                                       "metode":  "String - NOT NULL",
+                                                       "version":  "String - NOT NULL",
+                                                       "calculated_at":  "Timestamp",
+                                                       "created_at":  "Timestamp",
+                                                       "updated_at":  "Timestamp"
+                                                   }
+                                   }
+               },
+    "query_examples":  {
+                           "top_santri_dengan_detail":  {
+                                                            "query":  "Berikan 10 santri dengan score tertinggi",
+                                                            "sql":  "SELECT ss.santri_id, ss.skor_total, sp.nama, sp.jenis_kelamin, sp.provinsi, sp.kabupaten FROM santri_skor ss JOIN santri_pribadi sp ON ss.santri_id = sp.id ORDER BY ss.skor_total DESC LIMIT 10",
+                                                            "description":  "SELALU JOIN dengan santri_pribadi untuk mendapatkan nama dan alamat"
+                                                        },
+                           "pesantren_top_score":  {
+                                                       "query":  "Pesantren dengan skor tertinggi",
+                                                       "sql":  "SELECT ps.pesantren_id, ps.skor_total, ps.kategori_kelayakan, pp.nama, pp.alamat, pp.kabupaten, pp.provinsi, pp.nama_kyai FROM pesantren_skor ps JOIN pondok_pesantren pp ON ps.pesantren_id = pp.id ORDER BY ps.skor_total DESC LIMIT 10",
+                                                       "description":  "JOIN pesantren_skor dengan pondok_pesantren untuk detail lengkap"
+                                                   },
+                           "santri_dengan_pesantren":  {
+                                                           "query":  "Santri miskin beserta nama pesantrennya",
+                                                           "sql":  "SELECT sp.nama as nama_santri, sp.provinsi, sp.kabupaten, ss.kategori_kemiskinan, pp.nama as nama_pesantren FROM santri_pribadi sp JOIN santri_skor ss ON sp.id = ss.santri_id LEFT JOIN pondok_pesantren pp ON sp.pesantren_id = pp.id WHERE ss.kategori_kemiskinan = \u0027Miskin\u0027 LIMIT 100",
+                                                           "description":  "Triple JOIN untuk mendapatkan detail santri, score, dan pesantren"
+                                                       },
+                           "santri_untuk_peta":  {
+                                                     "query":  "Santri miskin di Bandung untuk ditampilkan di peta",
+                                                     "sql":  "SELECT sp.id, sp.nama, sp.kabupaten, sp.provinsi, sp.latitude, sp.longitude, ss.skor_total, ss.kategori_kemiskinan FROM santri_pribadi sp JOIN santri_skor ss ON sp.id = ss.santri_id WHERE sp.kabupaten = \u0027Bandung\u0027 AND ss.kategori_kemiskinan = \u0027Miskin\u0027 LIMIT 100",
+                                                     "description":  "SELALU include latitude dan longitude untuk query santri agar bisa ditampilkan di peta"
+                                                 },
+                           "pesantren_untuk_peta":  {
+                                                        "query":  "Pesantren dengan skor tinggi di Jawa Barat untuk peta",
+                                                        "sql":  "SELECT pp.id, pp.nama, pp.alamat, pp.kabupaten, pp.provinsi, ps.skor_total, ST_Y(pm.lokasi::geometry) as latitude, ST_X(pm.lokasi::geometry) as longitude FROM pondok_pesantren pp JOIN pesantren_skor ps ON pp.id = ps.pesantren_id JOIN pesantren_map pm ON pp.id = pm.pesantren_id WHERE pp.provinsi = \u0027Jawa Barat\u0027 AND ps.skor_total \u003e 80 ORDER BY ps.skor_total DESC LIMIT 50",
+                                                        "description":  "SELALU JOIN dengan pesantren_map dan extract koordinat menggunakan ST_X() dan ST_Y() untuk peta"
+                                                    }
+                       },
+    "enum_values":  {
+                        "kategori_kemiskinan":  [
+                                                    "Tidak Miskin",
+                                                    "Rentan Miskin",
+                                                    "Miskin",
+                                                    "Sangat Miskin"
+                                                ],
+                        "fasilitas_mck":  [
+                                              "lengkap",
+                                              "kurang_lengkap",
+                                              "tidak_layak"
+                                          ],
+                        "kualitas_air_bersih":  [
+                                                    "layak_minum",
+                                                    "berbau",
+                                                    "keruh",
+                                                    "asin"
+                                                ]
+                    }
 }

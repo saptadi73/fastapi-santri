@@ -4,12 +4,13 @@ Panduan lengkap untuk mengintegrasikan GeoJSON output dari NL2SQL dengan aplikas
 
 ## Table of Contents
 1. [Overview](#overview)
-2. [GeoJSON Format](#geojson-format)
-3. [API Endpoints](#api-endpoints)
-4. [Intent Types & Map Output](#intent-types--map-output)
-5. [Frontend Integration Examples](#frontend-integration-examples)
-6. [Advanced Usage](#advanced-usage)
-7. [Troubleshooting](#troubleshooting)
+2. [Auto Coordinate Support](#auto-coordinate-support)
+3. [GeoJSON Format](#geojson-format)
+4. [API Endpoints](#api-endpoints)
+5. [Intent Types & Map Output](#intent-types--map-output)
+6. [Frontend Integration Examples](#frontend-integration-examples)
+7. [Advanced Usage](#advanced-usage)
+8. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -28,6 +29,90 @@ NL2SQL Map Integration memungkinkan:
 ✓ Bounding box calculation  
 ✓ JSON serialization safe  
 ✓ Leaflet & Mapbox compatible  
+
+---
+
+## Auto Coordinate Support
+
+**NEW (Jan 2026)**: Koordinat otomatis ditambahkan ke semua query santri dan pesantren!
+
+### Santri Queries
+
+Setiap query santri (non-agregasi) otomatis menyertakan `latitude` dan `longitude`:
+
+```
+Query: "Berikan 10 santri dengan skor tertinggi"
+
+Generated SQL:
+SELECT sp.id, sp.nama, sp.latitude, sp.longitude, ss.skor_total
+FROM santri_pribadi sp
+JOIN santri_skor ss ON sp.id = ss.santri_id
+ORDER BY ss.skor_total DESC
+LIMIT 10
+
+Response:
+{
+  "result": [
+    {
+      "id": "uuid-1",
+      "nama": "Ahmad Hidayat",
+      "latitude": -6.2088,
+      "longitude": 106.8456,
+      "skor_total": 92
+    }
+  ]
+}
+```
+
+### Pesantren Queries
+
+Setiap query pesantren (non-agregasi) otomatis JOIN dengan `pesantren_map` dan extract koordinat:
+
+```
+Query: "Pesantren dengan skor tertinggi di Jawa Barat"
+
+Generated SQL:
+SELECT pp.id, pp.nama, ps.skor_total, 
+       ST_Y(pm.lokasi::geometry) as latitude,
+       ST_X(pm.lokasi::geometry) as longitude
+FROM pondok_pesantren pp
+JOIN pesantren_skor ps ON pp.id = ps.pesantren_id
+JOIN pesantren_map pm ON pp.id = pm.pesantren_id
+WHERE pp.provinsi = 'Jawa Barat'
+ORDER BY ps.skor_total DESC
+LIMIT 50
+
+Response:
+{
+  "result": [
+    {
+      "id": "uuid-1",
+      "nama": "Pondok Pesantren Al-Muhtadin",
+      "latitude": -7.0562,
+      "longitude": 107.7564,
+      "skor_total": 95
+    }
+  ]
+}
+```
+
+### Key Points
+
+✅ **Automatic Inclusion**: Koordinat selalu ditambahkan otomatis  
+✅ **No Extra Endpoint Needed**: Gunakan `/nl2sql/query` biasa  
+✅ **Visualizable Immediately**: Data siap untuk peta interaktif  
+✅ **Smart Exclusion**: Agregasi queries (GROUP BY) tidak include koordinat  
+
+⚠️ **Aggregate Queries**: 
+```
+Query: "Berapa jumlah pesantren per kabupaten di Jawa Barat"
+
+Result (tanpa latitude/longitude):
+[
+  { "kabupaten": "Bandung", "jumlah_pesantren": 45 },
+  { "kabupaten": "Bogor", "jumlah_pesantren": 32 }
+]
+```
 
 ---
 
@@ -338,6 +423,7 @@ L.circle([center.latitude, center.longitude], {
 <!DOCTYPE html>
 <html>
 <head>
+  <title>AI Query Map</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-heat/0.2.0/leaflet-heat.min.js"></script>
@@ -355,7 +441,7 @@ L.circle([center.latitude, center.longitude], {
       attribution: 'OpenStreetMap'
     }).addTo(map);
 
-    // Fetch GeoJSON from NL2SQL
+    // Fetch GeoJSON from AI Query
     const query = "Heatmap santri berdasarkan skor";
     fetch('/nl2sql/query-map', {
       method: 'POST',
@@ -593,6 +679,51 @@ fetch('/nl2sql/query-map', {
 })
 .catch(error => console.error('Network error:', error));
 ```
+
+---
+
+## Coordinate Support Details
+
+### Santri Coordinate Extraction
+
+Koordinat santri diambil langsung dari tabel `santri_pribadi`:
+
+```sql
+-- Santri pribadi memiliki kolom latitude dan longitude
+SELECT sp.id, sp.nama, sp.latitude, sp.longitude
+FROM santri_pribadi sp
+WHERE sp.kategori_kemiskinan = 'Miskin'
+```
+
+### Pesantren Coordinate Extraction
+
+Koordinat pesantren diambil dari PostGIS geometry field di tabel `pesantren_map`:
+
+```sql
+-- PostGIS geometry functions untuk extract koordinat
+SELECT pp.id, pp.nama,
+       ST_Y(pm.lokasi::geometry) as latitude,  -- Y = latitude
+       ST_X(pm.lokasi::geometry) as longitude  -- X = longitude
+FROM pondok_pesantren pp
+JOIN pesantren_map pm ON pp.id = pm.pesantren_id
+```
+
+### System Prompt Specification
+
+OpenAI GPT-4 diberikan instruksi eksplisit untuk menambahkan koordinat:
+
+```
+INSTRUKSI SPESIAL:
+- Jika query memiliki entity "pesantren" dan BUKAN agregasi: 
+  WAJIB JOIN dengan pesantren_map dan extract koordinat dengan 
+  ST_Y(pm.lokasi::geometry) as latitude, 
+  ST_X(pm.lokasi::geometry) as longitude
+  
+- Jika query memiliki entity "santri" dan BUKAN agregasi: 
+  WAJIB SELECT latitude, longitude dari santri_pribadi
+```
+
+Instruksi ini ditambahkan ke setiap request ke OpenAI untuk memastikan koordinat selalu disertakan.
 
 ---
 

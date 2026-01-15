@@ -11,6 +11,7 @@ from sqlalchemy import text
 
 from app.core.config import settings
 from app.nl2sql.intent_classifier import IntentClassifier, IntentType, IntentResponse
+from app.nl2sql.result_enricher import ResultEnricher
 
 
 def load_schema_context() -> dict:
@@ -38,6 +39,12 @@ class NL2SQLService:
         self.db = db
         self.classifier = IntentClassifier()
         self.schema = load_schema_context()
+        try:
+            self.enricher = ResultEnricher(db)
+            print("[NL2SQL] ResultEnricher initialized successfully")
+        except Exception as e:
+            print(f"[NL2SQL] Error initializing enricher: {str(e)}")
+            self.enricher = None
     
     def process_query(self, user_query: str) -> dict[str, Any]:
         """
@@ -61,6 +68,7 @@ class NL2SQLService:
             
             # 2. Generate SQL based on intent
             sql_query = self.generate_sql(user_query, intent_response)
+            print(f"[NL2SQL] Generated SQL (raw): {sql_query[:200]}")
             
             # 3. Validate SQL
             validation = self.validate_sql(sql_query)
@@ -76,6 +84,21 @@ class NL2SQLService:
             start_time = datetime.now()
             result = self.execute_sql(sql_query)
             execution_time = (datetime.now() - start_time).total_seconds() * 1000
+            
+            # 5. Enrich results dengan detail dari tabel relasi
+            print(f"[NL2SQL] Before enrichment: result type={type(result)}, length={len(result) if isinstance(result, list) else 'N/A'}")
+            if isinstance(result, list) and len(result) > 0:
+                print(f"[NL2SQL] First row before enrichment: {list(result[0].keys()) if isinstance(result[0], dict) else 'N/A'}")
+                if self.enricher:
+                    try:
+                        result = self.enricher.enrich(result, sql_query)
+                        print(f"[NL2SQL] First row after enrichment: {list(result[0].keys()) if isinstance(result[0], dict) else 'N/A'}")
+                    except Exception as e:
+                        print(f"[NL2SQL] Error during enrichment: {str(e)}")
+                        import traceback
+                        traceback.print_exc()
+                else:
+                    print("[NL2SQL] Enricher is None, skipping enrichment")
             
             return {
                 "intent": intent_response,
@@ -112,12 +135,31 @@ Ubah pertanyaan dalam bahasa natural menjadi SQL query HANYA SELECT yang aman.
 ATURAN KETAT:
 1. Hanya SELECT queries (tidak boleh UPDATE/INSERT/DELETE)
 2. Selalu gunakan LIMIT <= 1000
-3. Untuk geometry: gunakan ST_Distance, ST_Within, ST_Contains
-4. Jangan gunakan tabel di luar schema yang diberikan
-5. Selalu gunakan parameter binding (placeholder) untuk nilai pengguna
+3. **WAJIB MEMBACA query_examples dari schema - IKUTI POLA TERSEBUT**
+4. **PENTING: Gunakan JOIN untuk mendapatkan detail lengkap (nama, alamat, dll)**
+   - Untuk santri dengan score: JOIN santri_skor dengan santri_pribadi ON santri_skor.santri_id = santri_pribadi.id
+   - Untuk pesantren dengan score: JOIN pesantren_skor dengan pondok_pesantren ON pesantren_skor.pesantren_id = pondok_pesantren.id
+   - JANGAN hanya SELECT ID saja, SELECT juga nama, alamat, dan kolom detail lainnya
+5. **SANGAT PENTING - KOORDINAT UNTUK PETA (WAJIB!):**
+   - Jika query tentang SANTRI dan tidak ada GROUP BY: SELALU SELECT latitude, longitude dari santri_pribadi
+     Contoh: SELECT sp.id, sp.nama, sp.latitude, sp.longitude, ss.skor_total FROM santri_pribadi sp JOIN santri_skor ss ON sp.id = ss.santri_id ...
+   - Jika query tentang PESANTREN dan tidak ada GROUP BY: JOIN dengan pesantren_map dan WAJIB extract koordinat menggunakan ST_X() dan ST_Y()
+     Contoh: SELECT pp.id, pp.nama, ps.skor_total, ST_Y(pm.lokasi::geometry) as latitude, ST_X(pm.lokasi::geometry) as longitude FROM pondok_pesantren pp JOIN pesantren_skor ps ON pp.id = ps.pesantren_id JOIN pesantren_map pm ON pp.id = pm.pesantren_id ...
+   - TANPA KOORDINAT = QUERY SALAH
+6. **Untuk agregasi per wilayah (kabupaten/provinsi):**
+   - Gunakan GROUP BY kabupaten/provinsi
+   - Gunakan aggregate functions: COUNT(*), AVG(skor_total), SUM(), MAX(), MIN()
+   - Jangan include latitude/longitude pada agregasi
+7. **PENTING: Gunakan enum values yang TEPAT (case-sensitive):**
+   - kualitas_air_bersih: 'layak_minum', 'berbau', 'keruh', 'asin' (lowercase dengan underscore)
+   - fasilitas_mck: 'lengkap', 'kurang_lengkap', 'tidak_layak' (lowercase dengan underscore)
+   - kategori_kemiskinan: 'Tidak Miskin', 'Rentan Miskin', 'Miskin', 'Sangat Miskin' (dengan spasi dan kapital)
+8. LIHAT query_examples di schema untuk exact pattern - ikuti yang paling sesuai
+9. Untuk geometry: gunakan ST_Distance, ST_Within, ST_Contains, ST_Intersects
+10. Jangan gunakan tabel di luar schema yang diberikan
 
 Output HANYA SQL query tanpa penjelasan lainnya.
-Jika tidak bisa buat query aman, output: "ERROR: Tidak dapat membuat query aman"
+Jika query terlalu ambigu, buat query yang paling masuk akal berdasarkan context.
 
 SCHEMA DATABASE:
 """ + schema_str
@@ -127,7 +169,14 @@ Entities: {', '.join(intent.entity_types)}
 
 User query: {user_query}
 
-Buat SQL SELECT query yang aman dan efisien."""
+Buat SQL SELECT query yang aman dan efisien.
+Jika query meminta aggregasi per wilayah (kabupaten/provinsi), gunakan GROUP BY dengan aggregate functions (COUNT, AVG, SUM).
+
+INSTRUKSI SPESIAL:
+- Jika query memiliki entity "pesantren" dan BUKAN agregasi: WAJIB JOIN dengan pesantren_map dan extract koordinat dengan ST_Y(pm.lokasi::geometry) as latitude, ST_X(pm.lokasi::geometry) as longitude
+- Jika query memiliki entity "santri" dan BUKAN agregasi: WAJIB SELECT latitude, longitude dari santri_pribadi
+
+Jika tidak bisa dipahami, buat query yang paling reasonable berdasarkan intent."""
         
         try:
             response = client.chat.completions.create(

@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-Successfully implemented a complete Natural Language to SQL (NL2SQL) system with **GeoJSON map integration**. The system allows users to query the database using natural language and receive RFC 7946 compliant GeoJSON output optimized for map visualization in Leaflet or Mapbox.
+Successfully implemented a complete AI Query system with **GeoJSON map integration**. The system allows users to query the database using natural language and receive RFC 7946 compliant GeoJSON output optimized for map visualization in Leaflet or Mapbox.
 
 ### Key Achievement
 Users can now ask queries like:
@@ -168,7 +168,7 @@ Methods:
 ## Features & Capabilities
 
 ### Core Capabilities
-✅ Natural language query understanding  
+✅ AI-powered query understanding  
 ✅ Automatic SQL generation  
 ✅ Database execution  
 ✅ RFC 7946 GeoJSON output  

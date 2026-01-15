@@ -10,7 +10,7 @@ from app.nl2sql.intent_classifier import IntentClassifier, IntentType
 from app.nl2sql.nl2sql_service import NL2SQLService
 from app.supports import success_response, error_response
 
-router = APIRouter(prefix="/nl2sql", tags=["NL2SQL"])
+router = APIRouter(prefix="/nl2sql", tags=["AI Query"])
 
 
 class IntentDetectionRequest(BaseModel):
@@ -107,7 +107,7 @@ def nl2sql_query(
     db: Session = Depends(get_db)
 ):
     """
-    Convert natural language to SQL and execute query.
+    Convert AI query to SQL and execute query.
     
     Example:
     - "Tunjukkan 10 santri dengan skor tertinggi di Jawa Barat"
@@ -141,8 +141,13 @@ def nl2sql_query(
         result = service.process_query(request.query)
         
         if result.get("error"):
+            # Include SQL query in error response for debugging
             return error_response(
                 message=result["error"],
+                errors={
+                    "sql_query": result.get("sql_query", "N/A"),
+                    "intent": str(result.get("intent", "N/A"))
+                },
                 status_code=400
             )
         
@@ -272,7 +277,7 @@ def list_intents():
 @router.post("/test", response_model=dict)
 def test_nl2sql(db: Session = Depends(get_db)):
     """
-    Test NL2SQL dengan query contoh.
+    Test AI Query dengan query contoh.
     
     Berguna untuk testing tanpa perlu provide query sendiri.
     """
@@ -309,7 +314,7 @@ def test_nl2sql(db: Session = Depends(get_db)):
 @router.post("/query-map", response_model=dict)
 def nl2sql_query_map(request: NL2SQLRequest, db: Session = Depends(get_db)):
     """
-    Execute NL2SQL query dan return GeoJSON untuk map visualization.
+    Execute AI Query dan return GeoJSON untuk map visualization.
     
     Query example:
     - "Tampilkan lokasi semua santri miskin"

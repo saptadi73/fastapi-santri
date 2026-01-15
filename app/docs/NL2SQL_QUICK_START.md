@@ -257,7 +257,7 @@ app/core/config.py                       # OpenAI configuration (already set up)
 
 ```
 ┌─────────────────────────────────────────┐
-│   User Query (Natural Language)         │
+│   User Query (AI Input)                  │
 │   "Tunjukkan santri miskin di Bandung"  │
 └──────────────────┬──────────────────────┘
                    ↓

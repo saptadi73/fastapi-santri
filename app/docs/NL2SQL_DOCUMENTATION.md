@@ -1,6 +1,6 @@
-# NL2SQL API Documentation
+# AI Query API Documentation
 
-Natural Language to SQL (NL2SQL) system untuk mengkonversi pertanyaan pengguna dalam bahasa natural (Indonesia/Inggris) menjadi SQL queries yang aman dan dapat dieksekusi terhadap database.
+Sistem AI Query untuk mengkonversi pertanyaan pengguna dalam bahasa natural (Indonesia/Inggris) menjadi SQL queries yang aman dan dapat dieksekusi terhadap database.
 
 ## 📋 Daftar Isi
 
@@ -8,9 +8,10 @@ Natural Language to SQL (NL2SQL) system untuk mengkonversi pertanyaan pengguna d
 2. [Endpoints](#endpoints)
 3. [Intent Types](#intent-types)
 4. [Examples](#examples)
-5. [Architecture](#architecture)
-6. [Security](#security)
-7. [Troubleshooting](#troubleshooting)
+5. [Map Integration (Coordinates)](#map-integration-coordinates)
+6. [Architecture](#architecture)
+7. [Security](#security)
+8. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -43,9 +44,9 @@ curl -X POST "http://localhost:8000/nl2sql/detect-intent" \
 }
 ```
 
-### 2. Jalankan NL2SQL Query
+### 2. Jalankan AI Query
 
-Konversi natural language langsung ke SQL dan jalankan:
+Konversi bahasa natural langsung ke SQL dan jalankan:
 
 ```bash
 curl -X POST "http://localhost:8000/nl2sql/query" \
@@ -428,7 +429,175 @@ app/
 
 ---
 
-## Security
+## Map Integration (Coordinates)
+
+### 🗺️ Overview
+
+NL2SQL queries otomatis menambahkan koordinat (latitude/longitude) untuk hasil yang dapat ditampilkan di peta interaktif. Fitur ini memungkinkan visualisasi data santri dan pesantren di peta.
+
+### Coordinate Support
+
+#### Santri Queries
+
+Semua query santri (non-agregasi) otomatis menambahkan `latitude` dan `longitude` dari tabel `santri_pribadi`:
+
+**Example Query:**
+```
+"Berikan 10 santri dengan skor tertinggi"
+```
+
+**Generated SQL:**
+```sql
+SELECT sp.id, sp.nama, sp.latitude, sp.longitude, ss.skor_total
+FROM santri_pribadi sp
+JOIN santri_skor ss ON sp.id = ss.santri_id
+ORDER BY ss.skor_total DESC
+LIMIT 10
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "result": [
+      {
+        "id": "uuid-1",
+        "nama": "Ahmad Hidayat",
+        "latitude": -6.2088,
+        "longitude": 106.8456,
+        "skor_total": 92
+      },
+      {
+        "id": "uuid-2", 
+        "nama": "Siti Nurhaliza",
+        "latitude": -6.1944,
+        "longitude": 107.0091,
+        "skor_total": 88
+      }
+    ]
+  }
+}
+```
+
+#### Pesantren Queries
+
+Semua query pesantren (non-agregasi) otomatis mengekstrak koordinat dari PostGIS geometry field di tabel `pesantren_map`:
+
+**Example Query:**
+```
+"Pesantren dengan skor tertinggi di Jawa Barat"
+```
+
+**Generated SQL:**
+```sql
+SELECT pp.id, pp.nama, ps.skor_total, 
+       ST_Y(pm.lokasi::geometry) as latitude,
+       ST_X(pm.lokasi::geometry) as longitude
+FROM pondok_pesantren pp
+JOIN pesantren_skor ps ON pp.id = ps.pesantren_id
+JOIN pesantren_map pm ON pp.id = pm.pesantren_id
+WHERE pp.provinsi = 'Jawa Barat'
+ORDER BY ps.skor_total DESC
+LIMIT 50
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "result": [
+      {
+        "id": "uuid-1",
+        "nama": "Pondok Pesantren Al-Muhtadin",
+        "skor_total": 95,
+        "latitude": -7.0562,
+        "longitude": 107.7564
+      },
+      {
+        "id": "uuid-2",
+        "nama": "Pondok Pesantren Al-Azhar",
+        "skor_total": 89,
+        "latitude": -6.3111,
+        "longitude": 107.0298
+      }
+    ]
+  }
+}
+```
+
+### Usage in Frontend
+
+Gunakan koordinat untuk menampilkan marker di peta interaktif (menggunakan Leaflet, Mapbox, atau Google Maps):
+
+```javascript
+// Assuming response dari /nl2sql/query endpoint
+const response = await fetch('/nl2sql/query', {
+  method: 'POST',
+  body: JSON.stringify({ query: "Pesantren di Jawa Barat" })
+});
+
+const data = await response.json();
+
+// Create map markers
+data.data.result.forEach(item => {
+  const marker = L.marker(
+    [item.latitude, item.longitude],
+    {
+      title: item.nama,
+      popup: `${item.nama} - Skor: ${item.skor_total}`
+    }
+  ).addTo(map);
+});
+```
+
+### Coordinate Extraction Methods
+
+#### PostGIS ST_X() dan ST_Y()
+
+Untuk pesantren, koordinat diambil dari geometry field menggunakan PostGIS functions:
+
+```sql
+-- Extract longitude (X coordinate)
+ST_X(pm.lokasi::geometry) as longitude
+
+-- Extract latitude (Y coordinate)  
+ST_Y(pm.lokasi::geometry) as latitude
+```
+
+#### Direct Columns (Santri)
+
+Untuk santri, koordinat langsung dari kolom tabel:
+
+```sql
+SELECT sp.latitude, sp.longitude
+FROM santri_pribadi sp
+```
+
+### Important Notes
+
+⚠️ **Aggregate Queries (GROUP BY) tidak include koordinat**
+
+Ketika query menggunakan `GROUP BY` (agregasi per wilayah), koordinat tidak disertakan:
+
+```
+"Berapa jumlah pesantren per kabupaten di Jawa Barat"
+```
+
+**Response (tanpa latitude/longitude):**
+```json
+{
+  "result": [
+    { "kabupaten": "Bandung", "jumlah_pesantren": 45 },
+    { "kabupaten": "Bogor", "jumlah_pesantren": 32 }
+  ]
+}
+```
+
+Ini adalah perilaku yang benar karena agregasi tidak memiliki single latitude/longitude.
+
+---
 
 ### Safety Measures
 
