@@ -44,6 +44,7 @@ from app.routes.pesantren_score_routes import router as pesantren_score_router
 from app.routes.santri_map_routes import router as santri_map_router
 from app.routes.pesantren_map_routes import router as pesantren_map_router
 from app.routes.nl2sql_routes import router as nl2sql_router
+from app.routes.gemini_routes import router as gemini_router
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -63,7 +64,8 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"]
+    expose_headers=["*"],
+    max_age=3600
 )
 
 # Mount static files for uploads
@@ -93,6 +95,7 @@ app.include_router(pesantren_map_router)
 app.include_router(pesantren_pendidikan_router)
 app.include_router(pesantren_score_router)
 app.include_router(nl2sql_router)
+app.include_router(gemini_router)
 
 @app.get("/")
 def root():

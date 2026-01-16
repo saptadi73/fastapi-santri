@@ -1,4 +1,4 @@
-fastapi
+fastapi>=0.115.0
 uvicorn
 gunicorn
 sqlalchemy
@@ -10,3 +10,6 @@ httpx
 pytest
 pytest-asyncio
 pytest-cov
+google-genai
+pillow
+python-multipart
