@@ -2,13 +2,18 @@
 Gemini AI Service for Image and Video Analysis
 Uses Google Gemini API for vision tasks
 """
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, TYPE_CHECKING, cast
 try:
     from google import genai
     from google.genai import types
 except ImportError:
     genai = None
     types = None
+
+if TYPE_CHECKING:
+    from google.genai import types as types_module
+else:
+    types_module = types
 from fastapi import UploadFile, HTTPException
 import base64
 from io import BytesIO
@@ -22,7 +27,7 @@ class GeminiService:
     
     def __init__(self):
         """Initialize Gemini API with configuration"""
-        if genai is None:
+        if genai is None or types_module is None:
             raise ValueError("google-genai package not installed. Run: pip install google-genai")
         
         if not settings.gemini_api_key:
@@ -31,6 +36,8 @@ class GeminiService:
         self.client = genai.Client(api_key=settings.gemini_api_key)
         self.model_name = settings.gemini_model
         self.temperature = settings.gemini_temperature
+        # Store types module as instance variable for use in other methods
+        self.types = cast(Any, types_module)
     
     async def analyze_image(
         self, 
@@ -90,12 +97,12 @@ class GeminiService:
             response = self.client.models.generate_content(
                 model=self.model_name,
                 contents=[
-                    types.Content(
+                    self.types.Content(
                         role="user",
                         parts=[
-                            types.Part(text=prompt),
-                            types.Part(
-                                inline_data=types.Blob(
+                            self.types.Part(text=prompt),
+                            self.types.Part(
+                                inline_data=self.types.Blob(
                                     mime_type=file.content_type,
                                     data=content
                                 )
@@ -103,7 +110,7 @@ class GeminiService:
                         ]
                     )
                 ],
-                config=types.GenerateContentConfig(
+                config=self.types.GenerateContentConfig(
                     temperature=self.temperature
                 )
             )
@@ -114,8 +121,13 @@ class GeminiService:
                 result_text = response.text
             elif hasattr(response, 'candidates') and response.candidates:
                 candidate = response.candidates[0]
-                if hasattr(candidate, 'content') and hasattr(candidate.content, 'parts'):
-                    result_text = " ".join(part.text for part in candidate.content.parts if hasattr(part, 'text'))
+                if hasattr(candidate, 'content') and candidate.content is not None and hasattr(candidate.content, 'parts'):
+                    parts_text = []
+                    content_parts = cast(Any, candidate.content.parts)
+                    for part in content_parts:
+                        if hasattr(part, 'text'):
+                            parts_text.append(part.text)
+                    result_text = " ".join(parts_text)
             else:
                 result_text = str(response)
             
@@ -185,12 +197,12 @@ class GeminiService:
             response = self.client.models.generate_content(
                 model=self.model_name,
                 contents=[
-                    types.Content(
+                    self.types.Content(
                         role="user",
                         parts=[
-                            types.Part(text=prompt),
-                            types.Part(
-                                inline_data=types.Blob(
+                            self.types.Part(text=prompt),
+                            self.types.Part(
+                                inline_data=self.types.Blob(
                                     mime_type=file.content_type,
                                     data=content
                                 )
@@ -198,7 +210,7 @@ class GeminiService:
                         ]
                     )
                 ],
-                config=types.GenerateContentConfig(
+                config=self.types.GenerateContentConfig(
                     temperature=self.temperature
                 )
             )
@@ -293,11 +305,11 @@ class GeminiService:
 5. Any recommendations or observations"""
             
             # Build parts list with prompt and all images
-            parts = [types.Part(text=prompt)]
+            parts = [self.types.Part(text=prompt)]
             for img_part in image_parts:
                 parts.append(
-                    types.Part(
-                        inline_data=types.Blob(
+                    self.types.Part(
+                        inline_data=self.types.Blob(
                             mime_type=img_part["mime_type"],
                             data=img_part["data"]
                         )
@@ -308,12 +320,12 @@ class GeminiService:
             response = self.client.models.generate_content(
                 model=self.model_name,
                 contents=[
-                    types.Content(
+                    self.types.Content(
                         role="user",
                         parts=parts
                     )
                 ],
-                config=types.GenerateContentConfig(
+                config=self.types.GenerateContentConfig(
                     temperature=self.temperature
                 )
             )
@@ -353,6 +365,109 @@ Provide the text exactly as it appears, maintaining formatting where possible.
 If there is no text, state "No text detected"."""
         
         return await self.analyze_image(file, prompt)
+    
+    async def ask_question(
+        self,
+        question: str
+    ) -> Dict[str, Any]:
+        """
+        Ask a question to the AI assistant with topic restrictions
+        
+        Args:
+            question: User's question
+            
+        Returns:
+            Dict containing the answer
+        """
+        try:
+            # System instruction for the assistant
+            system_instruction = """Anda adalah asisten aplikasi "Program Bantuan Santri" yang dirancang khusus untuk membantu pengguna memahami berbagai aspek terkait santri, pesantren, dan program bantuan sosial.
+
+**IDENTITAS ANDA:**
+- Nama: Asisten Program Bantuan Santri
+- Peran: Membantu memberikan informasi dan pengetahuan seputar dunia pesantren dan program bantuan
+
+**TOPIK YANG BOLEH DIBAHAS:**
+1. Santri dan kehidupan santri
+2. Pesantren (sejarah, sistem pendidikan, kurikulum)
+3. Nahdlatul Ulama (NU) dan organisasinya
+4. Program bantuan sosial dan mekanismenya
+5. Pengentasan kemiskinan dan program kesejahteraan
+6. Kemiskinan dan solusinya
+7. Pendidikan (formal dan non-formal, termasuk pendidikan pesantren)
+8. Dakwah dan metode dakwah
+9. Kitab kuning dan kajian kitab
+10. Islam (ajaran, praktik ibadah, akhlak, muamalah)
+11. Sejarah Islam dan perkembangannya
+12. Sejarah pesantren di Indonesia
+13. Sejarah Hari Santri (22 Oktober)
+14. Hari Pahlawan dan pahlawan nasional
+15. Nilai-nilai kearifan lokal dan tradisi pesantren
+
+**TOPIK YANG DILARANG KERAS:**
+1. Politik praktis dan kebijakan pemerintah yang kontroversial
+2. Partai politik dan kampanye politik
+3. Perbandingan agama atau debat antar agama
+4. Konten yang memecah belah atau provokatif
+5. Isu SARA yang sensitif
+
+**CARA MERESPONS:**
+- Jika pertanyaan sesuai topik: Berikan jawaban yang informatif, akurat, dan bermanfaat dengan bahasa yang sopan dan mudah dipahami
+- Jika pertanyaan di luar topik: Dengan sopan arahkan pengguna kembali ke topik yang relevan dengan mengatakan: "Maaf, saya adalah asisten Program Bantuan Santri yang fokus pada topik santri, pesantren, pendidikan, dan bantuan sosial. Saya tidak dapat membahas topik [sebutkan topik yang ditanyakan]. Apakah ada yang ingin Anda tanyakan seputar santri, pesantren, atau program bantuan?"
+- Jika pertanyaan terkait topik terlarang: Dengan tegas namun sopan tolak dengan mengatakan: "Maaf, saya tidak dapat membahas topik [politik/partai politik/perbandingan agama] karena di luar ruang lingkup asisten Program Bantuan Santri. Silakan ajukan pertanyaan seputar santri, pesantren, pendidikan, atau bantuan sosial."
+
+**PRINSIP MENJAWAB:**
+- Gunakan bahasa Indonesia yang baik dan benar
+- Berikan jawaban yang objektif dan berdasarkan fakta
+- Jika tidak yakin, akui keterbatasan pengetahuan
+- Selalu hormati keberagaman dan hindari bias
+- Fokus pada edukasi dan memberikan manfaat
+
+Ingat: Tujuan Anda adalah membantu pengguna mendapatkan informasi bermanfaat seputar dunia santri dan pesantren untuk mendukung program bantuan sosial."""
+
+            # Generate response with system instruction
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=[
+                    self.types.Content(
+                        role="user",
+                        parts=[self.types.Part(text=question)]
+                    )
+                ],
+                config=self.types.GenerateContentConfig(
+                    temperature=self.temperature,
+                    system_instruction=system_instruction
+                )
+            )
+            
+            # Extract text from response
+            result_text = ""
+            if hasattr(response, 'text'):
+                result_text = response.text
+            elif hasattr(response, 'candidates') and response.candidates:
+                candidate = response.candidates[0]
+                if hasattr(candidate, 'content') and candidate.content is not None and hasattr(candidate.content, 'parts'):
+                    parts_text = []
+                    content_parts = cast(Any, candidate.content.parts)
+                    for part in content_parts:
+                        if hasattr(part, 'text'):
+                            parts_text.append(part.text)
+                    result_text = " ".join(parts_text)
+            else:
+                result_text = str(response)
+            
+            return {
+                "success": True,
+                "question": question,
+                "answer": result_text,
+                "model": settings.gemini_model
+            }
+            
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error processing question: {str(e)}"
+            )
 
 
 # Create singleton instance

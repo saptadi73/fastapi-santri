@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asisten Program Bantuan Santri - Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .message.error .message-content {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+
+        .loading {
+            display: flex;
+            gap: 5px;
+            padding: 12px 16px;
+        }
+
+        .loading span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .loading span:nth-child(1) { animation-delay: -0.32s; }
+        .loading span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        .input-container {
+            display: flex;
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #eee;
+        }
+
+        #questionInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #eee;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #questionInput:focus {
+            border-color: #667eea;
+        }
+
+        #sendButton {
+            margin-left: 10px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #sendButton:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        #sendButton:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px 20px;
+            background: white;
+            border-top: 1px solid #eee;
+        }
+
+        .suggestion-chip {
+            padding: 8px 12px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .suggestion-chip:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .info-banner {
+            background: #e3f2fd;
+            padding: 10px 20px;
+            font-size: 12px;
+            color: #1976d2;
+            text-align: center;
+            border-bottom: 1px solid #bbdefb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🕌 Asisten Program Bantuan Santri</h1>
+            <p>Tanya jawab tentang santri, pesantren, dan program bantuan</p>
+        </div>
+
+        <div class="info-banner">
+            💡 Topik: Santri, Pesantren, NU, Pendidikan, Dakwah, Kitab Kuning, Hari Santri
+        </div>
+
+        <div class="suggestions">
+            <div class="suggestion-chip" onclick="askSuggestion('Apa itu pesantren?')">Apa itu pesantren?</div>
+            <div class="suggestion-chip" onclick="askSuggestion('Bagaimana sejarah Hari Santri?')">Sejarah Hari Santri</div>
+            <div class="suggestion-chip" onclick="askSuggestion('Apa itu kitab kuning?')">Kitab Kuning</div>
+            <div class="suggestion-chip" onclick="askSuggestion('Program bantuan untuk santri?')">Program Bantuan</div>
+        </div>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="message assistant">
+                <div class="message-content">
+                    Assalamu'alaikum! Saya asisten Program Bantuan Santri. Silakan ajukan pertanyaan seputar santri, pesantren, pendidikan Islam, dan program bantuan. Bagaimana saya bisa membantu Anda hari ini?
+                </div>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <input 
+                type="text" 
+                id="questionInput" 
+                placeholder="Ketik pertanyaan Anda di sini..."
+                maxlength="1000"
+                onkeypress="handleKeyPress(event)"
+            >
+            <button id="sendButton" onclick="sendQuestion()">Kirim</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/gemini/ask';
+        const chatContainer = document.getElementById('chatContainer');
+        const questionInput = document.getElementById('questionInput');
+        const sendButton = document.getElementById('sendButton');
+
+        function addMessage(content, type = 'assistant') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = content;
+            
+            messageDiv.appendChild(contentDiv);
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function showLoading() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message assistant';
+            loadingDiv.id = 'loadingMessage';
+            loadingDiv.innerHTML = '<div class="message-content loading"><span></span><span></span><span></span></div>';
+            chatContainer.appendChild(loadingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function hideLoading() {
+            const loadingMessage = document.getElementById('loadingMessage');
+            if (loadingMessage) {
+                loadingMessage.remove();
+            }
+        }
+
+        async function sendQuestion() {
+            const question = questionInput.value.trim();
+            
+            if (question.length < 5) {
+                alert('Pertanyaan terlalu pendek. Minimal 5 karakter.');
+                return;
+            }
+
+            // Add user message
+            addMessage(question, 'user');
+            questionInput.value = '';
+            
+            // Disable input
+            sendButton.disabled = true;
+            questionInput.disabled = true;
+            showLoading();
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question }),
+                });
+
+                hideLoading();
+
+                if (response.ok) {
+                    const data = await response.json();
+                    addMessage(data.data.answer, 'assistant');
+                } else {
+                    const errorData = await response.json();
+                    addMessage(`Error: ${errorData.detail || 'Terjadi kesalahan'}`, 'error');
+                }
+            } catch (error) {
+                hideLoading();
+                addMessage('Error: Tidak dapat terhubung ke server. Pastikan server berjalan di http://localhost:8000', 'error');
+                console.error('Error:', error);
+            } finally {
+                sendButton.disabled = false;
+                questionInput.disabled = false;
+                questionInput.focus();
+            }
+        }
+
+        function askSuggestion(question) {
+            questionInput.value = question;
+            sendQuestion();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendQuestion();
+            }
+        }
+
+        // Focus input on load
+        window.onload = () => {
+            questionInput.focus();
+        };
+    </script>
+</body>
+</html>

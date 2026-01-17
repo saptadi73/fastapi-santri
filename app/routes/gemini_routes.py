@@ -2,11 +2,23 @@
 Gemini AI Vision Analysis Routes
 Endpoints for image and video analysis using Google Gemini
 """
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Body
 from typing import Optional, List
+from pydantic import BaseModel, Field
 from app.services.gemini_service import gemini_service
 
 router = APIRouter(prefix="/gemini", tags=["Gemini AI Vision"])
+
+
+class QuestionRequest(BaseModel):
+    """Request model for asking questions"""
+    question: str = Field(
+        ...,
+        description="Pertanyaan yang ingin diajukan",
+        min_length=5,
+        max_length=1000,
+        examples=["Apa itu pesantren?", "Bagaimana sejarah Hari Santri?"]
+    )
 
 
 @router.post("/analyze/image", response_model=None)
@@ -314,4 +326,61 @@ Provide an objective, respectful assessment suitable for social assistance progr
         raise HTTPException(
             status_code=500,
             detail=f"Failed to analyze housing: {str(e)}"
+        )
+
+
+@router.post("/ask", response_model=None)
+async def ask_question(
+    request: QuestionRequest = Body(..., description="Pertanyaan yang ingin diajukan")
+):
+    """
+    Ajukan pertanyaan kepada Asisten Program Bantuan Santri
+    
+    Endpoint ini memungkinkan pengguna mengajukan pertanyaan dengan pembatasan topik.
+    
+    **TOPIK YANG BOLEH DIBAHAS:**
+    - Santri dan kehidupan santri
+    - Pesantren (sejarah, sistem pendidikan, kurikulum)
+    - Nahdlatul Ulama (NU)
+    - Program bantuan sosial
+    - Pengentasan kemiskinan
+    - Kemiskinan dan solusinya
+    - Pendidikan (formal dan non-formal)
+    - Dakwah dan metode dakwah
+    - Kitab kuning dan kajian kitab
+    - Islam (ajaran, praktik ibadah, akhlak)
+    - Sejarah Islam
+    - Sejarah pesantren di Indonesia
+    - Sejarah Hari Santri (22 Oktober)
+    - Hari Pahlawan
+    
+    **TOPIK YANG TIDAK BOLEH DIBAHAS:**
+    - Politik praktis
+    - Partai politik
+    - Perbandingan agama
+    
+    **Contoh pertanyaan yang sesuai:**
+    - "Apa itu pesantren dan bagaimana sistem pendidikannya?"
+    - "Bagaimana sejarah Hari Santri di Indonesia?"
+    - "Apa saja program bantuan sosial untuk santri?"
+    - "Bagaimana peran pesantren dalam pengentasan kemiskinan?"
+    - "Apa itu kitab kuning dan mengapa penting dipelajari?"
+    
+    **Parameters:**
+    - **question**: Pertanyaan yang ingin diajukan (5-1000 karakter)
+    
+    **Returns:** Jawaban dari asisten AI dengan konteks Program Bantuan Santri
+    """
+    try:
+        result = await gemini_service.ask_question(request.question)
+        return {
+            "status": "success",
+            "data": result
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to process question: {str(e)}"
         )
